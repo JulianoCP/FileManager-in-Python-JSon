@@ -1,33 +1,12 @@
-import json
-import os
+from discManager import cDISC_MANAGER
 
-f = open('disco.json')
-data = json.load(f)
+def main():
+    cDISC = cDISC_MANAGER()
+    #cDISC.add_in_folder_on_disc("Juliano", {})
+    cDISC.add_in_file_on_disc("juliano.txt", {"juliano.txt": "Ola"}, 20, 3)
+    cDISC.view_disc_data()
+    cDISC.save_disc()
+    exit()
 
-for i in data['blocks']['block_list']:
-    print(i)
-
-''' Adicionar um Elemento '''
-data['blocks']['block_list'].update({'15': 'juliano.txt'})
-
-''' Adicionar um Binario ao block_list '''
-with open("codigo.pdf", "r") as f:
-    byte = f.read()
-data['blocks']['block_list'].update({'42':(byte)})
-
-
-''' Buscar o Binario do block_list '''
-binario = open('out.pdf', 'wb')
-#binario.write(bytes(data['blocks']['block_list']['42'], encoding='utf8'))
-binario.write((data['blocks']['block_list']['42']))
-binario.close()
-
-''' Remover um Elemento '''
-data['blocks']['block_list'].pop('5')
-
-
-''' Salvar Arquivo para Persistir'''
-with open('output.json', 'w') as outfile:
-    json.dump(data, outfile)
-
-f.close()
+if __name__ == '__main__': 
+    main() 
