@@ -13,7 +13,7 @@ def main():
     #cDISK.recover_file_on_disk("juliano.txt")
     #cDISK.add_folder_on_disk("home")
 
-    cDISK.remove_file_on_disk("juliano.txt")
+    #cDISK.remove_file_on_disk("juliano.txt")
     cDISK.view_disk_data()
 
     cDISK.save_disk()

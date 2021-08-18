@@ -111,8 +111,9 @@ class cDISK_MANAGER:
                 self.remove_block_on_disk(block)
             
             self.disk_data["files"]["file_list"].pop((self.current_folder + file_name), None)
+            self.disk_data["folders"][self.current_folder].remove(file_name)
         except:
-            print("Failure, file does not exist.")
+            print("Failed to remove file.")
 
     #Metodo que reconstroi o arquivo apatir dos bytes salvos nos blocos.
     def recover_file_on_disk(self, file_name):
@@ -187,6 +188,6 @@ class cDISK_MANAGER:
             self.disk_data["folders"][self.current_folder].append(file_name)
             self.erase_file_upload_to_disk(file_name)
             self.persist_data()
-            
+
         except:
             print("Failed to add file to disk.")
