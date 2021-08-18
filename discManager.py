@@ -62,9 +62,27 @@ class cDISC_MANAGER:
         print(json.dumps(self.disc_data, indent = 4))
     
     #Adiciona novo bloco utilizazdo no disco/atualizar algum já existente.
-    def add_in_block_on_disc(self, name_block, content_block):
-        self.disc_data["blocks"]["block_list"][name_block] = ({name_block : content_block})
-        self.persist_data()
+    def add_in_block_on_disc(self, name_block, name_file):
+        with open(name_file, "rb") as f:
+                byte = f.read()
+
+        b64 = base64.b64encode(byte)
+        self.disc_data["blocks"]["block_list"][name_block] = ({ str(name_block): (b64).decode("utf8")})
+
+    def recover_file_on_disc(self, list_block_used):
+        print("OI")
+        recover = None
+        #for block in list_block_used:
+            #recover += self.disc_data["blocks"]["block_list"][block][str(block)]
+
+        recover = self.disc_data["blocks"]["block_list"][0][str(0)]
+        decode_b64 = base64.b64decode(recover)
+        pdf = open('out.pdf', 'wb')
+        pdf.write(decode_b64)
+        pdf.close()
+
+        #binario = self.disc_data["blocks"]["block_list"][name_block][str(name_block)]
+        #decode_b64 = base64.b64decode(binario)
 
     #Muda para o diretorio selecionado se existir.
     def change_current_folder(self, name_folder):
@@ -77,28 +95,9 @@ class cDISC_MANAGER:
     def add_in_folder_on_disc(self, name_folder, content_folder):
         self.disc_data["folders"].update({name_folder : content_folder})
         self.persist_data()
-    
-    def add_file(self, name_file):
-
-        with open(name_file, "rb") as f:
-                byte = f.read()
-
-        b64 = base64.b64encode(byte)
-
-        self.disc_data["blocks"]["block_list"][0] = ({ "15": (b64).decode("utf8")})
-        binario = self.disc_data["blocks"]["block_list"][0]["15"]
-
-        decode_b64 = base64.b64decode(binario)
-        pdf = open('out.pdf', 'wb')
-        pdf.write(decode_b64)
-        pdf.close()
-        self.persist_data()
-
-
-
 
     #Adiciona novo arquivo no disco/atualizar algum já existente.
-    def add_in_file_on_disc(self, name_file, content_file, size_bytes, amount_block):
+    def add_in_file_on_disc(self, name_file, size_bytes, amount_block):
         list_block_used = []
 
         for available in range(len(self.disc_data["environmental_variables"]["block_list_avaliable"])):
@@ -111,7 +110,7 @@ class cDISC_MANAGER:
 
         self.disc_data["files"]["file_list"].append(
             {
-                name_file : content_file, 
+                "name_file" : name_file,
                 "bytes_used" : size_bytes,
                 "block_used" : list_block_used
             }
@@ -119,4 +118,5 @@ class cDISC_MANAGER:
 
         self.disc_data["folders"][self.current_folder].update({name_file : amount_block})
         self.persist_data()
+
 
