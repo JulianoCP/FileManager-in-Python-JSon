@@ -1,32 +1,40 @@
-import json, base64, os, math
+import json, base64, os, math, sys
 
 DISK_NAME = "disk.dsk" #Nome do disco.
+
 SIZE_DISK = 16 #Tamanho total do disko em KB/s.
 SIZE_BLOCK = 4 #Tamanho dos blocos em KB/s.
-SIZE_BYTES_BLOCK = 50 #Quantidade de byte em cada bloco.
+SIZE_BYTES_BLOCK = 1024 #Quantidade de byte em cada bloco.
 
 DEFAULT_CARACTER = "=" #Caracter defaul para preencher os campos do json.
-MAX_SIZE_FOLDER_NAME = 10 #Nome maximo suportado para um folder.
-MAX_SIZE_FILE_NAME = 10 #Nome maximo suportado para um file.
-MAX_SIZE_METADATA_FILE = 10 #Nome maximo para os metadados de um file.
+DEFAULT_CARACTER_FOLDEDR = "/" #Caracter defaul para preencher o primeiro folder.
 
-AMOUNT_BLOCK_AVAILABLE_TO_FILE = 5 #Quantidade maximo de blocks de enderecamento que pode ser usadas por um file.
+MAX_SIZE_FILE_NAME = 20 #Nome maximo suportado para um file.
+MAX_SIZE_FOLDER_NAME = 20 #Nome maximo suportado para um folder.
+MAX_SIZE_METADATA_FILE = 20 #Nome maximo para os metadados de um file.
 MAX_ADDRESSES_IN_BLOCK = 5 #Quantidade maximo de blocos que podem ser enderecados, lembrando que 5 == "00000" ou seja até 99999 blocos
 
 AMOUNT_FILE = 2 #Quantidade maxima de files no disco.
-AMOUNT_FOLDER = 2 #Quantidade maxima de folders no disco.
+AMOUNT_FOLDER = 5 #Quantidade maxima de folders no disco.
+AMOUNT_DATA_IN_FOLDER = 3 #Quantidade de itens em um folder.
+AMOUNT_BLOCK_AVAILABLE_TO_FILE = 5 #Quantidade maximo de blocks de enderecamento que pode ser usadas por um file.
 
 #Class responsavel por manipular as informações do disko que vao ser salva no .dsk
 class cDISK_MANAGER:
     #Construtor do disko.
     def __init__(self):
         self.file_name = DISK_NAME
-        self.current_folder = "/"
+        self.current_folder = DEFAULT_CARACTER_FOLDEDR
+        self.current_folder_indice = 0
         self.default_value_block = ""
         self.default_block_used_files = []
 
-        start_folder = self.current_folder
-        for interator in range(MAX_SIZE_FOLDER_NAME - len(self.current_folder)):
+        self.register_files = ""
+        self.register_folder = ""
+        self.register_env = ""
+
+        start_folder = DEFAULT_CARACTER_FOLDEDR
+        for interator in range(MAX_SIZE_FOLDER_NAME - len(DEFAULT_CARACTER_FOLDEDR)):
             start_folder += DEFAULT_CARACTER
         self.current_folder = start_folder
 
@@ -57,17 +65,47 @@ class cDISK_MANAGER:
             while(len(struct_to_disk["environmental_variables"]["block_list_available"]) < math.ceil(SIZE_DISK / SIZE_BLOCK)):
                 struct_to_disk["environmental_variables"]["block_list_available"].append(1)
                 struct_to_disk["blocks"].append(self.default_value_block)
+
             struct_to_disk["environmental_variables"]["amount_block_available"] = self.verify_size_string(str(len(struct_to_disk["environmental_variables"]["block_list_available"])), 10)
+            self.register_env += str(struct_to_disk["environmental_variables"])
 
             for interator in range(AMOUNT_FILE):
-                struct_to_disk["files"].append(self.create_default_file(interator))
+                struct_to_disk["files"].append(self.create_default_file())
                 struct_to_disk["environmental_variables"]["file_list_available"].append(1)
             
+            vet_folder_inside = []
+            for indice in range(AMOUNT_DATA_IN_FOLDER):
+                vet_folder_inside.append(self.create_default_name_using_size(MAX_SIZE_FILE_NAME))
+
             for interator in range(AMOUNT_FOLDER):
-                struct_to_disk["folders"].append(self.create_default_name_using_size(MAX_SIZE_FOLDER_NAME))
+                struct_to_disk["folders"].append(
+                    [
+                        self.create_default_name_using_size(MAX_SIZE_FOLDER_NAME),
+                        vet_folder_inside
+                    ]
+                )
                 struct_to_disk["environmental_variables"]["folder_list_available"].append(1)
-            
-            struct_to_disk["folders"][0] = self.current_folder
+
+            self.register_folder += str(struct_to_disk["folders"])
+            struct_to_disk["folders"][0][0] = self.current_folder
+
+            #Seta o primeiro bloco com dados dos files.
+            mnt_data = self.verify_size_string(("files" + self.register_files), SIZE_BYTES_BLOCK)
+            self.show_message_if_none("Failure, blocking limit for extrapolated files.", mnt_data)
+            struct_to_disk["blocks"][0] = mnt_data
+            struct_to_disk["environmental_variables"]["block_list_available"][0] = 0
+
+            #Seta o segundo bloco com dados dos folders.
+            mnt_data = self.verify_size_string(("folders" + self.register_folder), SIZE_BYTES_BLOCK)
+            self.show_message_if_none("Failure, blocking limit for extrapolated folders.", mnt_data)
+            struct_to_disk["blocks"][1] = mnt_data
+            struct_to_disk["environmental_variables"]["block_list_available"][1] = 0
+
+            #Seta o segundo bloco com dados dos folders.
+            mnt_data = self.verify_size_string(("environmental_variables" + self.register_env), SIZE_BYTES_BLOCK)
+            self.show_message_if_none("Failure, blocking limit for extrapolated environmental.", mnt_data)
+            struct_to_disk["blocks"][2] = mnt_data
+            struct_to_disk["environmental_variables"]["block_list_available"][2] = 0
 
             with open(DISK_NAME, "w") as file_write:
                 json.dump(struct_to_disk, file_write)
@@ -79,13 +117,15 @@ class cDISK_MANAGER:
             print("Disk opened successfully.")
 
     #Cria mockup de files.
-    def create_default_file(self, name):
+    def create_default_file(self):
         mock_file = {
                         "file_name" : self.create_default_name_using_size(MAX_SIZE_METADATA_FILE),
                         "extension_file" : self.create_default_name_using_size(MAX_SIZE_METADATA_FILE),
                         "bytes_used" : self.create_default_name_using_size(MAX_SIZE_METADATA_FILE),
                         "block_used" : self.default_block_used_files
                     }
+        for key in mock_file:
+            self.register_files += str(key) + str(mock_file[key])
         return mock_file
 
     #Cria uma string de caracter defaulm usando como base um tamanho passado por parametro.
@@ -106,7 +146,9 @@ class cDISK_MANAGER:
         block_result = []
         for interator in range(AMOUNT_BLOCK_AVAILABLE_TO_FILE):
             if interator < len(blocks_list):
-                block_result.append(blocks_list[interator])
+                block_result.append(str(blocks_list[interator]))
+            else:
+                block_result.append(self.create_default_name_using_size(MAX_ADDRESSES_IN_BLOCK))
         return block_result
 
     #Verifica o tamanho do arquivo, caso seja aceita ele é completado com valor default.
@@ -172,7 +214,11 @@ class cDISK_MANAGER:
     #Metodo que adiciona novo bloco utilizazdo no disko/atualizar algum já existente.
     def add_block_on_disk(self, indice_block, chunk):
         try:
-            self.disk_data["blocks"][indice_block] = (chunk).decode("utf8")
+            data = (chunk).decode("utf8")
+            if len(data) >= SIZE_BYTES_BLOCK:
+                self.disk_data["blocks"][indice_block] = (chunk).decode("utf8")
+            else:
+                self.disk_data["blocks"][indice_block] = self.verify_size_string(data, SIZE_BYTES_BLOCK)
         except:
             print("Failed, unable to add block to disk.")
     
@@ -230,7 +276,7 @@ class cDISK_MANAGER:
 
     #Metodo que adiciona novo arquivo no disko/atualizar algum já existente.
     def add_file_on_disk(self, file_name):
-        #try:
+        try:
             start_chunk = 0
             list_block_used = []
             extract_soft_info_file = [None, None]
@@ -251,31 +297,30 @@ class cDISK_MANAGER:
             self.show_message_if_none("Don't have space to insert file.", has_available_slot)
             chunk = math.ceil((size_64_encode / amount_block ))
 
-            #for indice in range(len(self.disk_data["environmental_variables"]["block_list_available"])):
-            #    if amount_block <= 0: break
-            #    if self.disk_data["environmental_variables"]["block_list_available"][indice]:
-            #        self.disk_data["environmental_variables"]["block_list_available"][indice] = 0
-            #        self.add_block_on_disk(indice, b64[start_chunk : start_chunk + chunk])
-            #        list_block_used.append(indice)
-            #
-            #        if ((start_chunk + chunk) > len(b64)):
-            #            chunk = len(b64)
-            #        else:
-            #            start_chunk += chunk
-            #            
-            #        amount_block -= 1
+            for indice in range(len(self.disk_data["environmental_variables"]["block_list_available"])):
+                if amount_block <= 0: break
+                if self.disk_data["environmental_variables"]["block_list_available"][indice]:
+                    self.disk_data["environmental_variables"]["block_list_available"][indice] = 0
+                    self.add_block_on_disk(indice, b64[start_chunk : start_chunk + chunk])
+                    list_block_used.append(self.verify_size_string(str(indice), MAX_ADDRESSES_IN_BLOCK))
+            
+                    if ((start_chunk + chunk) > len(b64)):
+                        chunk = len(b64)
+                    else:
+                        start_chunk += chunk
+                    amount_block -= 1
 
             for interator in range(len(self.disk_data["environmental_variables"]["file_list_available"])):
                 if self.disk_data["environmental_variables"]["file_list_available"][interator]:
                     self.disk_data["files"][interator].update({"file_name" : extract_soft_info_file[0]}),
                     self.disk_data["files"][interator].update({"extension_file" : extract_soft_info_file[1]}),
                     self.disk_data["files"][interator].update({"bytes_used" : self.verify_size_string(str(size_64_encode), MAX_SIZE_METADATA_FILE)}),
-                    #self.disk_data["files"][interator]["block_used"] = self.set_block_used(list_block_used)
+                    self.disk_data["files"][interator]["block_used"] = self.set_block_used(list_block_used)
                     break
 
-            #self.disk_data["folders"][self.current_folder].update({file_name : extract_soft_info_file[0]})
+            self.disk_data["folders"][self.current_folder_indice][1][0] = extract_soft_info_file[0]
             #self.erase_file_upload_to_disk(file_name)
             self.persist_data()
 
-        #except:
-         #   print("Failed to add file to disk.")
+        except:
+            print("Failed to add file to disk.")
