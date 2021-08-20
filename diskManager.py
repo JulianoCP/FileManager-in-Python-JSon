@@ -1,18 +1,20 @@
 import json, base64, os, math
-from typing import Iterator
 
 DISK_NAME = "disk.dsk" #Nome do disco.
 SIZE_DISK = 16 #Tamanho total do disko em KB/s.
 SIZE_BLOCK = 4 #Tamanho dos blocos em KB/s.
 SIZE_BYTES_BLOCK = 50 #Quantidade de byte em cada bloco.
 
-DEFAULT_CARACTER = "="
-MAX_SIZE_FOLDER_NAME = 10
-MAX_SIZE_FILE_NAME = 10
-MAX_SIZE_EXTENSION_NAME = 10
-MAX_SIZE_METADATA_FILE = 10
+DEFAULT_CARACTER = "=" #Caracter defaul para preencher os campos do json.
+MAX_SIZE_FOLDER_NAME = 10 #Nome maximo suportado para um folder.
+MAX_SIZE_FILE_NAME = 10 #Nome maximo suportado para um file.
+MAX_SIZE_METADATA_FILE = 10 #Nome maximo para os metadados de um file.
 
-AMOUNT_BLOCK_AVAILABLE_TO_FILE = 20
+AMOUNT_BLOCK_AVAILABLE_TO_FILE = 5 #Quantidade maximo de blocks de enderecamento que pode ser usadas por um file.
+MAX_ADDRESSES_IN_BLOCK = 5 #Quantidade maximo de blocos que podem ser enderecados, lembrando que 5 == "00000" ou seja até 99999 blocos
+
+AMOUNT_FILE = 2 #Quantidade maxima de files no disco.
+
 
 #Class responsavel por manipular as informações do disko que vao ser salva no .dsk
 class cDISK_MANAGER:
@@ -21,6 +23,7 @@ class cDISK_MANAGER:
         self.file_name = DISK_NAME
         self.current_folder = "/"
         self.default_value_block = ""
+        self.default_block_used_files = []
 
         start_folder = self.current_folder
         for interator in range(MAX_SIZE_FOLDER_NAME - len(self.current_folder)):
@@ -29,6 +32,9 @@ class cDISK_MANAGER:
 
         for interator in range(SIZE_BYTES_BLOCK):
             self.default_value_block += DEFAULT_CARACTER
+
+        for interator in range(AMOUNT_BLOCK_AVAILABLE_TO_FILE):
+            self.default_block_used_files.append(self.create_default_name_using_size(MAX_ADDRESSES_IN_BLOCK))
 
         try:
             print("Looking for the disk.")
@@ -41,20 +47,26 @@ class cDISK_MANAGER:
                     "block_list" : []
                 },
                 "files" : {
-                    "file_list": {}
+                    "file_list": []
                 },
                 "folders": {},
                 "environmental_variables": {
                     "block_list_available": [],
+                    "file_list_available": [],
                     "amount_block_available" : 0,
-                    "size_block": SIZE_BLOCK,
-                    "indice_file" : 0,
                 }
             }
+
             while(len(struct_to_disk["environmental_variables"]["block_list_available"]) < math.ceil(SIZE_DISK / SIZE_BLOCK)):
                 struct_to_disk["environmental_variables"]["block_list_available"].append(1)
-                struct_to_disk["environmental_variables"]["amount_block_available"] += 1
                 struct_to_disk["blocks"]["block_list"].append(self.default_value_block)
+            struct_to_disk["environmental_variables"]["amount_block_available"] = self.verify_size_string(str(len(struct_to_disk["environmental_variables"]["block_list_available"])), 10)
+
+            for interator in range(AMOUNT_FILE):
+                struct_to_disk["environmental_variables"]["file_list_available"].append(1)
+
+            for interator in range(AMOUNT_FILE):
+                struct_to_disk["files"]["file_list"].append(self.create_default_file(interator))
             
             struct_to_disk["folders"].update({self.current_folder : {}})
 
@@ -66,6 +78,23 @@ class cDISK_MANAGER:
             self.disk_data = json.load(self.file_pointer)
         finally:
             print("Disk opened successfully.")
+
+    #Cria mockup de files.
+    def create_default_file(self, name):
+        mock_file = {
+                        "file_name" : self.create_default_name_using_size(MAX_SIZE_METADATA_FILE),
+                        "extension_file" : self.create_default_name_using_size(MAX_SIZE_METADATA_FILE),
+                        "bytes_used" : self.create_default_name_using_size(MAX_SIZE_METADATA_FILE),
+                        "block_used" : self.default_block_used_files
+                    }
+        return mock_file
+
+    #Cria uma string de caracter defaulm usando como base um tamanho passado por parametro.
+    def create_default_name_using_size(self, size):
+        new_name = ""
+        for interator in range(size):
+            new_name += DEFAULT_CARACTER
+        return new_name
 
     #Função para mostrar ao usuario o erro caso ocorra um excecao por 'None'
     def show_message_if_none(self, msg, result):
@@ -79,8 +108,6 @@ class cDISK_MANAGER:
         for interator in range(AMOUNT_BLOCK_AVAILABLE_TO_FILE):
             if interator < len(blocks_list):
                 block_result.append(blocks_list[interator])
-            else:
-                block_result.append(None)
         return block_result
 
     #Verifica o tamanho do arquivo, caso seja aceita ele é completado com valor default.
@@ -205,7 +232,7 @@ class cDISK_MANAGER:
             extract_soft_info_file = [None, None]
             extract_hard_info_file = file_name.split(".") #[0] - Nome arquivo / [1] - Extensao do arquivo.
             extract_soft_info_file[0] = self.verify_size_string(extract_hard_info_file[0], MAX_SIZE_FILE_NAME)
-            extract_soft_info_file[1] = self.verify_size_string(extract_hard_info_file[1], MAX_SIZE_EXTENSION_NAME)
+            extract_soft_info_file[1] = self.verify_size_string(extract_hard_info_file[1], MAX_SIZE_METADATA_FILE)
 
             self.show_message_if_none("File name, extrapolated size.", extract_soft_info_file[0])
             self.show_message_if_none("File extension extrapolated size.", extract_soft_info_file[1])
@@ -219,8 +246,6 @@ class cDISK_MANAGER:
             has_available_slot = self.verify_has_block_available(amount_block)
             self.show_message_if_none("Don't have space to insert file.", has_available_slot)
             chunk = math.ceil((size_64_encode / amount_block ))
-
-
 
             #for indice in range(len(self.disk_data["environmental_variables"]["block_list_available"])):
             #    if amount_block <= 0: break
