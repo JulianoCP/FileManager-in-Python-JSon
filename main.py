@@ -19,7 +19,7 @@ def main():
     cDISK.view_disk_data()
 
     cDISK.save_disk()
-    #cDISK.erase_disk()
+    cDISK.erase_disk()
 
     ola = None
 

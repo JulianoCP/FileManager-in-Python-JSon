@@ -1,4 +1,5 @@
 import json, base64, os, math
+from typing import Iterator
 
 DISK_NAME = "disk.dsk" #Nome do disco.
 SIZE_DISK = 16 #Tamanho total do disko em KB/s.
@@ -10,6 +11,8 @@ MAX_SIZE_FOLDER_NAME = 10
 MAX_SIZE_FILE_NAME = 10
 MAX_SIZE_EXTENSION_NAME = 10
 MAX_SIZE_METADATA_FILE = 10
+
+AMOUNT_BLOCK_AVAILABLE_TO_FILE = 20
 
 #Class responsavel por manipular as informações do disko que vao ser salva no .dsk
 class cDISK_MANAGER:
@@ -70,8 +73,18 @@ class cDISK_MANAGER:
             print(msg)
             exit()
 
+    #Função para montar os blockos usados.
+    def set_block_used(self, blocks_list):
+        block_result = []
+        for interator in range(AMOUNT_BLOCK_AVAILABLE_TO_FILE):
+            if interator < len(blocks_list):
+                block_result.append(blocks_list[interator])
+            else:
+                block_result.append(None)
+        return block_result
+
     #Verifica o tamanho do arquivo, caso seja aceita ele é completado com valor default.
-    def verify_size(self, name, expected_size):
+    def verify_size_string(self, name, expected_size):
         if len(name) <= expected_size:
             new_name = name
             for interator in range(expected_size - len(name)):
@@ -191,8 +204,8 @@ class cDISK_MANAGER:
             list_block_used = []
             extract_soft_info_file = [None, None]
             extract_hard_info_file = file_name.split(".") #[0] - Nome arquivo / [1] - Extensao do arquivo.
-            extract_soft_info_file[0] = self.verify_size(extract_hard_info_file[0], MAX_SIZE_FILE_NAME)
-            extract_soft_info_file[1] = self.verify_size(extract_hard_info_file[1], MAX_SIZE_EXTENSION_NAME)
+            extract_soft_info_file[0] = self.verify_size_string(extract_hard_info_file[0], MAX_SIZE_FILE_NAME)
+            extract_soft_info_file[1] = self.verify_size_string(extract_hard_info_file[1], MAX_SIZE_EXTENSION_NAME)
 
             self.show_message_if_none("File name, extrapolated size.", extract_soft_info_file[0])
             self.show_message_if_none("File extension extrapolated size.", extract_soft_info_file[1])
@@ -229,8 +242,8 @@ class cDISK_MANAGER:
                     {
                         "file_name" : extract_soft_info_file[0],
                         "extension_file" : extract_soft_info_file[1],
-                        "bytes_used" : size_64_encode,
-                        "block_used" : list_block_used
+                        "bytes_used" : self.verify_size_string(str(size_64_encode), MAX_SIZE_METADATA_FILE),
+                        "block_used" : self.set_block_used(list_block_used)
                     }
                 }
             )
