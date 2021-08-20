@@ -14,7 +14,7 @@ AMOUNT_BLOCK_AVAILABLE_TO_FILE = 5 #Quantidade maximo de blocks de enderecamento
 MAX_ADDRESSES_IN_BLOCK = 5 #Quantidade maximo de blocos que podem ser enderecados, lembrando que 5 == "00000" ou seja até 99999 blocos
 
 AMOUNT_FILE = 2 #Quantidade maxima de files no disco.
-
+AMOUNT_FOLDER = 2 #Quantidade maxima de folders no disco.
 
 #Class responsavel por manipular as informações do disko que vao ser salva no .dsk
 class cDISK_MANAGER:
@@ -43,32 +43,31 @@ class cDISK_MANAGER:
         except:
             print("Disc not found.")
             struct_to_disk = {
-                "blocks": {
-                    "block_list" : []
-                },
-                "files" : {
-                    "file_list": []
-                },
-                "folders": {},
+                "blocks": [],
+                "files" : [],
+                "folders": [],
                 "environmental_variables": {
                     "block_list_available": [],
                     "file_list_available": [],
+                    "folder_list_available" : [],
                     "amount_block_available" : 0,
                 }
             }
 
             while(len(struct_to_disk["environmental_variables"]["block_list_available"]) < math.ceil(SIZE_DISK / SIZE_BLOCK)):
                 struct_to_disk["environmental_variables"]["block_list_available"].append(1)
-                struct_to_disk["blocks"]["block_list"].append(self.default_value_block)
+                struct_to_disk["blocks"].append(self.default_value_block)
             struct_to_disk["environmental_variables"]["amount_block_available"] = self.verify_size_string(str(len(struct_to_disk["environmental_variables"]["block_list_available"])), 10)
 
             for interator in range(AMOUNT_FILE):
+                struct_to_disk["files"].append(self.create_default_file(interator))
                 struct_to_disk["environmental_variables"]["file_list_available"].append(1)
-
-            for interator in range(AMOUNT_FILE):
-                struct_to_disk["files"]["file_list"].append(self.create_default_file(interator))
             
-            struct_to_disk["folders"].update({self.current_folder : {}})
+            for interator in range(AMOUNT_FOLDER):
+                struct_to_disk["folders"].append(self.create_default_name_using_size(MAX_SIZE_FOLDER_NAME))
+                struct_to_disk["environmental_variables"]["folder_list_available"].append(1)
+            
+            struct_to_disk["folders"][0] = self.current_folder
 
             with open(DISK_NAME, "w") as file_write:
                 json.dump(struct_to_disk, file_write)
@@ -122,7 +121,12 @@ class cDISK_MANAGER:
 
     #Verifica se tem espaco suficiente nos blocos.
     def verify_has_block_available(self, size_file):
-        if size_file <= self.disk_data["environmental_variables"]["amount_block_available"]:
+        mnt_amount = ""
+        for caracter in self.disk_data["environmental_variables"]["amount_block_available"]:
+            if caracter != DEFAULT_CARACTER:
+                mnt_amount += caracter
+
+        if size_file <= int(mnt_amount):
             return True
         return None
 
@@ -168,14 +172,14 @@ class cDISK_MANAGER:
     #Metodo que adiciona novo bloco utilizazdo no disko/atualizar algum já existente.
     def add_block_on_disk(self, indice_block, chunk):
         try:
-            self.disk_data["blocks"]["block_list"][indice_block] = (chunk).decode("utf8")
+            self.disk_data["blocks"][indice_block] = (chunk).decode("utf8")
         except:
             print("Failed, unable to add block to disk.")
     
     #Metodo que remove os dados contidos no block_list[indice_block]
     def remove_block_on_disk(self, indice_block):
         try:
-            self.disk_data["blocks"]["block_list"][indice_block] = None
+            self.disk_data["blocks"][indice_block] = None
             self.disk_data["environmental_variables"]["block_list_available"][indice_block] = 1
         except:
             print("Failed to erase block on disk.")
@@ -183,12 +187,12 @@ class cDISK_MANAGER:
     #Metodo que deleta o arquivo do disco.
     def remove_file_on_disk(self, file_name):
         try:
-            extract_file = self.disk_data["files"]["file_list"][self.current_folder + file_name]
+            extract_file = self.disk_data["files"][self.current_folder + file_name]
 
             for block in extract_file["block_used"]:
                 self.remove_block_on_disk(block)
             
-            self.disk_data["files"]["file_list"].pop((self.current_folder + file_name), None)
+            self.disk_data["files"].pop((self.current_folder + file_name), None)
             self.disk_data["folders"][self.current_folder].remove(file_name)
         except:
             print("Failed to remove file.")
@@ -197,10 +201,10 @@ class cDISK_MANAGER:
     def recover_file_on_disk(self, file_name):
         try:
             recover_bytes = ""
-            extract_file = self.disk_data["files"]["file_list"][self.current_folder + file_name]
+            extract_file = self.disk_data["files"][self.current_folder + file_name]
 
             for block in extract_file["block_used"]:
-                recover_bytes += self.disk_data["blocks"]["block_list"][block]
+                recover_bytes += self.disk_data["blocks"][block]
 
             decode_b64 = base64.b64decode(recover_bytes)
             file = open(file_name, 'wb')
@@ -261,19 +265,15 @@ class cDISK_MANAGER:
             #            
             #        amount_block -= 1
 
-            self.disk_data["files"]["file_list"].update(
-                {   
-                    self.current_folder + extract_soft_info_file[0] : 
-                    {
-                        "file_name" : extract_soft_info_file[0],
-                        "extension_file" : extract_soft_info_file[1],
-                        "bytes_used" : self.verify_size_string(str(size_64_encode), MAX_SIZE_METADATA_FILE),
-                        "block_used" : self.set_block_used(list_block_used)
-                    }
-                }
-            )
+            for interator in range(len(self.disk_data["environmental_variables"]["file_list_available"])):
+                if self.disk_data["environmental_variables"]["file_list_available"][interator]:
+                    self.disk_data["files"][interator].update({"file_name" : extract_soft_info_file[0]}),
+                    self.disk_data["files"][interator].update({"extension_file" : extract_soft_info_file[1]}),
+                    self.disk_data["files"][interator].update({"bytes_used" : self.verify_size_string(str(size_64_encode), MAX_SIZE_METADATA_FILE)}),
+                    #self.disk_data["files"][interator]["block_used"] = self.set_block_used(list_block_used)
+                    break
 
-            self.disk_data["folders"][self.current_folder].update({file_name : extract_soft_info_file[0]})
+            #self.disk_data["folders"][self.current_folder].update({file_name : extract_soft_info_file[0]})
             #self.erase_file_upload_to_disk(file_name)
             self.persist_data()
 
