@@ -2,14 +2,14 @@ import json, base64, os, math, sys
 
 DISK_NAME = "disk.dsk" #Nome do disco.
 
-SIZE_DISK = 20 #Tamanho total do disko em KB/s.
+SIZE_DISK = 80 #Tamanho total do disko em KB/s.
 SIZE_BLOCK = 4 #Tamanho dos blocos em KB/s.
 SIZE_BYTES_BLOCK = 4096 #Quantidade de byte em cada bloco.
 SIZE_TYPE_FOLDER = 1 #Tamanho maximo no campo TYPE do FOLDER.
 SIZE_POINTER_FOLDER = 5 #Tamanho maximo do campo POINTER do FOLDER.
 
 DEFAULT_CARACTER = "=" #Caracter defaul para preencher os campos do json.
-DEFAULT_CARACTER_FOLDEDR = "/" #Caracter defaul para preencher o primeiro folder.
+DEFAULT_CARACTER_FOLDER_ROOT = "/" #Caracter defaul para preencher o primeiro folder.
 DEFAULT_CARACTER_FILE = "A" #Caracter defaul para preencher se o bloco é um file na estrutura do folder.
 DEFAULT_CARACTER_FOLDER = "F" #Caracter defaul para preencher se o bloco é um folder na estrutura do folder.
 
@@ -22,14 +22,14 @@ MAX_ADDRESSES_IN_BLOCK = 5 #Quantidade maximo de blocos que podem ser enderecado
 AMOUNT_FILE = 2 #Quantidade maxima de files no disco.
 AMOUNT_FOLDER = 3 #Quantidade maxima de folders no disco.
 AMOUNT_DATA_IN_FOLDER = 3 #Quantidade de itens em um folder.
-AMOUNT_BLOCK_AVAILABLE_TO_FILE = 5 #Quantidade maximo de blocks de enderecamento que pode ser usadas por um file.
+AMOUNT_BLOCK_AVAILABLE_TO_FILE = 20 #Quantidade maximo de blocks de enderecamento que pode ser usadas por um file.
 
 #Class responsavel por manipular as informações do disko que vao ser salva no .dsk
 class cDISK_MANAGER:
     #Construtor do disko.
     def __init__(self):
         self.file_name = DISK_NAME
-        self.current_folder = DEFAULT_CARACTER_FOLDEDR
+        self.current_folder = DEFAULT_CARACTER_FOLDER_ROOT
         self.current_folder_indice = 0
         self.default_value_block = ""
         self.default_block_used_files = []
@@ -38,8 +38,8 @@ class cDISK_MANAGER:
         self.register_folder = ""
         self.register_env = ""
 
-        start_folder = DEFAULT_CARACTER_FOLDEDR
-        for interator in range(MAX_SIZE_FOLDER_NAME - len(DEFAULT_CARACTER_FOLDEDR)):
+        start_folder = DEFAULT_CARACTER_FOLDER_ROOT
+        for interator in range(MAX_SIZE_FOLDER_NAME - len(DEFAULT_CARACTER_FOLDER_ROOT)):
             start_folder += DEFAULT_CARACTER
         self.current_folder = start_folder
 
@@ -268,7 +268,7 @@ class cDISK_MANAGER:
         try:
             data = (chunk).decode("utf8")
             if len(data) >= SIZE_BYTES_BLOCK:
-                self.disk_data["blocks"][indice_block] = (chunk).decode("utf8")
+                self.disk_data["blocks"][indice_block] = data
             else:
                 self.disk_data["blocks"][indice_block] = self.verify_size_string(data, SIZE_BYTES_BLOCK)
         except:
@@ -300,6 +300,7 @@ class cDISK_MANAGER:
                 extract = self.return_correct_context(interator)
                 if extract != "":
                     self.disk_data["environmental_variables"]["block_list_available"][int(extract)] = 1
+                    self.disk_data["environmental_variables"]["amount_block_available"] += 1
         except:
             print("Failed to remove file.")
 
@@ -309,8 +310,11 @@ class cDISK_MANAGER:
             # - [0] = Indice de qual folder estamos, na estrutura dos folders.
             # - [1] = Indice de qual subfolder estamos, na esturura interna do folder. 
     def discover_file_on_folder(self, file_name):
-        discover = file_name.split(DEFAULT_CARACTER_FOLDEDR)
-        if discover[0] == "": discover[0] = DEFAULT_CARACTER_FOLDEDR
+        discover = file_name.split(DEFAULT_CARACTER_FOLDER_ROOT)
+        if len(discover) == 1: 
+            discover.append(discover[0])
+        discover[0] = DEFAULT_CARACTER_FOLDER_ROOT
+
         #Exemplo de file name sem o /dsk
         #"/tmp/michel.txt"
         #"/michel.txt"
@@ -336,19 +340,30 @@ class cDISK_MANAGER:
 
     #Metodo que reconstroi o arquivo apatir dos bytes salvos nos blocos.
     def recover_file_on_disk(self, file_name):
-        try:
-            recover_bytes = ""
-            extract_file = self.disk_data["files"][self.current_folder + file_name]
+       # try:
+            recover_indice_blocks = []
+            recover_data = ""
+            indice, _ = self.discover_file_on_folder(file_name)
+            extract_file = self.disk_data["files"][indice]
 
             for block in extract_file["block_used"]:
-                recover_bytes += self.disk_data["blocks"][block]
+                extract = self.return_correct_context(block)
+                if extract != "":
+                    recover_indice_blocks.append(int(extract))
+                
+            print("RECOVER>>> ",recover_indice_blocks)
 
-            decode_b64 = base64.b64decode(recover_bytes)
+            for interator in recover_indice_blocks:
+                recover_data += self.return_correct_context(self.disk_data["blocks"][interator])
+            
+            #print(recover_data)
+
+            decode_b64 = base64.b64decode(recover_data)
             file = open(file_name, 'wb')
             file.write(decode_b64)
             file.close()
-        except:
-            print("File recovery failed.")
+        #except:
+        #    print("File recovery failed.")
 
     #Metodo que muda para o diretorio selecionado se existir.
     def change_current_folder(self, name_folder):
@@ -367,7 +382,7 @@ class cDISK_MANAGER:
 
     #Metodo que adiciona novo arquivo no disko/atualizar algum já existente.
     def add_file_on_disk(self, file_name):
-        try:
+       # try:
             start_chunk = 0
             list_block_used = []
             extract_soft_info_file = [None, None]
@@ -396,26 +411,59 @@ class cDISK_MANAGER:
                 file_bytes = file.read()
 
             b64 = base64.b64encode(file_bytes)
+            
             size_64_encode = len(b64)
-            amount_block = math.ceil(((size_64_encode) / 1000)  / SIZE_BLOCK)
+            amount_block = math.ceil(size_64_encode / SIZE_BYTES_BLOCK)
             has_available_slot = self.verify_has_block_available(amount_block)
             self.show_message_if_none("Don't have space to insert file.", has_available_slot)
-            chunk = math.ceil((size_64_encode / amount_block ))
+            size_64_encode_manager = size_64_encode
 
+            print("TAMANHO ORIGINAL DO size_64_encode: ", size_64_encode)
+            print("TAMANHO ORIGINAL DO size_64_encode_manager: ", size_64_encode_manager)
+            print("TAMANHO ORIGINAL DO amount_block: ", amount_block)
+            print("TAMANHO ORIGINAL DO b64[-1]: ", b64[-1])
+
+            if size_64_encode_manager - SIZE_BYTES_BLOCK >= 0:
+                chunk = SIZE_BYTES_BLOCK
+                size_64_encode_manager -= chunk
+            else:
+                chunk = SIZE_BYTES_BLOCK - size_64_encode_manager
+                size_64_encode_manager -= chunk
+
+            start_new = 0
+            chunk_new = 4096
+            amount_block -= 1
+
+            #Coloca os dados do arquivo no disco logico.
             for indice in range(len(self.disk_data["environmental_variables"]["block_list_available"])):
-                if amount_block <= 0: break
+                if amount_block < 0: break
                 if self.disk_data["environmental_variables"]["block_list_available"][indice]:
+                    #print("START: {}, CHUNK {}, SIZE_64 {} //// START+CHUNK {}".format(start_chunk, chunk, size_64_encode_manager, start_chunk + chunk))
                     self.disk_data["environmental_variables"]["block_list_available"][indice] = 0
-                    self.add_block_on_disk(indice, b64[start_chunk : start_chunk + chunk])
+                    self.disk_data["environmental_variables"]["amount_block_available"] -= 1
+                    #self.add_block_on_disk(indice, b64[start_chunk : start_chunk + chunk])
+                    self.add_block_on_disk(indice, b64[start_new : chunk_new])
                     list_block_used.append(self.verify_size_string(str(indice), MAX_ADDRESSES_IN_BLOCK))
-            
-                    if ((start_chunk + chunk) > len(b64)):
-                        chunk = len(b64)
-                    else:
-                        start_chunk += chunk
-                    amount_block -= 1
 
-            pointer_save_file = 0
+                    if chunk_new + 4096 <= size_64_encode:
+                        print("ENTREUIIHYY !!!")
+                        start_new = chunk_new
+                        chunk_new += 4096
+                        print("NOVO >>> START: {}, CHUNK: {}".format(start_new,chunk_new))
+                    else:
+                        print("START: {}, CHUNK: {}".format(start_new,chunk_new))
+                        start_new = chunk_new
+                        chunk_new = size_64_encode
+                        print("START: {}, CHUNK: {}".format(start_new,chunk_new))
+            
+                    #if chunk >= size_64_encode_manager:
+                    #    chunk = size_64_encode_manager
+                    #else:
+                    #    size_64_encode_manager -= chunk
+                    #    start_chunk += chunk
+                    #amount_block -= 1
+
+            indice_save_file = 0
             for interator in range(len(self.disk_data["environmental_variables"]["file_list_available"])):
                 if self.disk_data["environmental_variables"]["file_list_available"][interator]:
                     self.disk_data["files"][interator].update({"file_name" : extract_soft_info_file[0]}),
@@ -423,8 +471,7 @@ class cDISK_MANAGER:
                     self.disk_data["files"][interator].update({"bytes_used" : self.verify_size_string(str(size_64_encode), MAX_SIZE_METADATA_FILE)}),
                     self.disk_data["files"][interator]["block_used"] = self.set_block_used(list_block_used)
                     self.disk_data["environmental_variables"]["file_list_available"][interator] = 0
-                    self.disk_data["environmental_variables"]["amount_file_available"] -= 1
-                    pointer_save_file = interator
+                    indice_save_file = interator
                     break
 
             for interator in range(len(dest_folder[1])):
@@ -432,10 +479,10 @@ class cDISK_MANAGER:
                     dest_folder[1][interator] = 0
                     self.disk_data["folders"][self.current_folder_indice][1][interator][0] = extract_soft_info_file[0]
                     self.disk_data["folders"][self.current_folder_indice][1][interator][1] = DEFAULT_CARACTER_FILE
-                    self.disk_data["folders"][self.current_folder_indice][1][interator][2] = pointer_save_file
+                    self.disk_data["folders"][self.current_folder_indice][1][interator][2] = indice_save_file
                     break
 
             self.persist_data()
 
-        except:
-            print("Failed to add file to disk.")
+        #except:
+         #   print("Failed to add file to disk.")
