@@ -2,7 +2,7 @@ import json, base64, os, math, sys
 
 DISK_NAME = "disk.dsk" #Nome do disco.
 
-SIZE_DISK = 16 #Tamanho total do disko em KB/s.
+SIZE_DISK = 20 #Tamanho total do disko em KB/s.
 SIZE_BLOCK = 4 #Tamanho dos blocos em KB/s.
 SIZE_BYTES_BLOCK = 4096 #Quantidade de byte em cada bloco.
 SIZE_TYPE_FOLDER = 1 #Tamanho maximo no campo TYPE do FOLDER.
@@ -36,6 +36,7 @@ class cDISK_MANAGER:
 
         self.register_files = ""
         self.register_folder = ""
+        self.register_env = ""
 
         start_folder = DEFAULT_CARACTER_FOLDEDR
         for interator in range(MAX_SIZE_FOLDER_NAME - len(DEFAULT_CARACTER_FOLDEDR)):
@@ -72,6 +73,7 @@ class cDISK_MANAGER:
                 struct_to_disk["environmental_variables"]["block_list_available"].append(1)
                 struct_to_disk["blocks"].append(self.default_value_block)
             struct_to_disk["environmental_variables"]["amount_block_available"] = len(struct_to_disk["environmental_variables"]["block_list_available"])
+            self.register_env += str(struct_to_disk["environmental_variables"])
 
             #CRIA OS FILES.
             for interator in range(AMOUNT_FILE):
@@ -129,6 +131,13 @@ class cDISK_MANAGER:
             struct_to_disk["environmental_variables"]["block_list_available"][1] = 0
             struct_to_disk["environmental_variables"]["amount_block_available"] -= 1 #UTILIZANDO UM BLOCO LOGICO PARA OS METADADOS DA TABELA DE FOLDERS.
 
+            #Seta o segundo bloco com dados dos environmental.
+            mnt_data = self.verify_size_string(("environmental_variables" + self.register_env), SIZE_BYTES_BLOCK)
+            self.show_message_if_none("Failure, blocking limit for extrapolated environmental.", mnt_data)
+            struct_to_disk["blocks"][2] = mnt_data
+            struct_to_disk["environmental_variables"]["block_list_available"][2] = 0
+            struct_to_disk["environmental_variables"]["amount_block_available"] -= 1 #UTILIZANDO UM BLOCO LOGICO PARA OS METADADOS DA TABELA DE FOLDERS.
+
             with open(DISK_NAME, "w") as file_write:
                 json.dump(struct_to_disk, file_write)
 
@@ -161,7 +170,7 @@ class cDISK_MANAGER:
     def show_message_if_none(self, msg, result):
         if result == None:
             print(msg)
-            return
+            exit()
 
     #Função para montar os blockos usados.
     def set_block_used(self, blocks_list):
@@ -205,17 +214,22 @@ class cDISK_MANAGER:
     def scan_struct(self):
         self.register_files = ""
         self.register_folder = ""
+        self.register_env = ""
 
         for mock_file in self.disk_data["files"]:
             for key in mock_file:
                 self.register_files += str(key) + str(mock_file[key])
         
+        for mock_env in self.disk_data["environmental_variables"]:
+            self.register_env += str(mock_env) + str(self.disk_data["environmental_variables"][mock_env])
+        
         for mock_folder in self.disk_data["folders"]:
             self.register_folder += str(mock_folder)
         self.register_folder += "]"
-      
+
         self.disk_data["blocks"][0] = self.verify_size_string(("files" + self.register_files), SIZE_BYTES_BLOCK)
         self.disk_data["blocks"][1] = self.verify_size_string(("folders[" + self.register_folder), SIZE_BYTES_BLOCK)
+        self.disk_data["blocks"][2] = self.verify_size_string(("environmental_variables" + self.register_env), SIZE_BYTES_BLOCK)
 
     #Metodo para ser chamada antes de fechar o programa
     def save_disk(self):
@@ -270,14 +284,15 @@ class cDISK_MANAGER:
 
     #Metodo que deleta o arquivo do disco.
     def remove_file_on_disk(self, file_name):
-        #try:
-
+        try:
             if len(file_name.split("/")) <= 1:
                 indice_pointer_file, index_folder = self.discover_file_on_folder(self.return_correct_context(self.current_folder) + file_name)
+                self.show_message_if_none("File not exist.", indice_pointer_file)
             else:
                 indice_pointer_file, index_folder = self.discover_file_on_folder(file_name)
+                self.show_message_if_none("File not exist.", indice_pointer_file)
 
-            self.disk_data["environmental_variables"]["folder_list_available"][ index_folder[0] ][1][ index_folder[1] ] = 1
+            self.disk_data["environmental_variables"]["folder_list_available"][index_folder[0]][1][index_folder[1]] = 1
             self.disk_data["environmental_variables"]["amount_file_available"] += 1
             self.disk_data["environmental_variables"]["file_list_available"][indice_pointer_file] = 1
 
@@ -285,24 +300,14 @@ class cDISK_MANAGER:
                 extract = self.return_correct_context(interator)
                 if extract != "":
                     self.disk_data["environmental_variables"]["block_list_available"][int(extract)] = 1
-
-            #for
-            #print(self.disk_data["files"][indice])
-
-
-
-                #self.remove_block_on_disk(block)
-            
-            #self.disk_data["files"].pop((self.current_folder + file_name), None)
-            #self.disk_data["folders"][self.current_folder].remove(file_name)
-        #except:
-         #   print("Failed to remove file.")
+        except:
+            print("Failed to remove file.")
 
     #Descobre onde esta o ponteiro do arquivo, e seu retorno envolve:
         # - [0] = O ponteiro do ARQUIVO, para a estrutura dos files.
         # - [1] = Vetor contendo:
-            # [0] = Indice de qual folder estamos, na estrutura dos folders.
-            # [1] = Indice de qual subfolder estamos, na esturura interna do folder. 
+            # - [0] = Indice de qual folder estamos, na estrutura dos folders.
+            # - [1] = Indice de qual subfolder estamos, na esturura interna do folder. 
     def discover_file_on_folder(self, file_name):
         discover = file_name.split(DEFAULT_CARACTER_FOLDEDR)
         if discover[0] == "": discover[0] = DEFAULT_CARACTER_FOLDEDR
@@ -325,7 +330,9 @@ class cDISK_MANAGER:
                         if self.return_correct_context(data[0]) == new_name_file:
                             current_folder_index = self.disk_data["folders"].index(folder)
                             current_inside_index = folder[1].index(data)
-                            return(data[2],[current_folder_index, current_inside_index])
+                            if not (self.disk_data["environmental_variables"]["folder_list_available"][current_folder_index][1][current_inside_index]):
+                                return(data[2],[current_folder_index, current_inside_index])
+        return None, None
 
     #Metodo que reconstroi o arquivo apatir dos bytes salvos nos blocos.
     def recover_file_on_disk(self, file_name):
