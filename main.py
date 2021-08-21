@@ -8,7 +8,7 @@ def main():
     #cDISK.add_file_on_disk("codigo.pdf", {"codigo.pdf": "Ola"}, 20, 3)
 
     #cDISK.add_file_on_disk("michel.txt")
-    cDISK.add_file_on_disk("juliano.txt")
+    cDISK.add_file_on_disk("ola.txt")
     #cDISK.add_file_on_disk("codigo.pdf")
 
     #cDISK.recover_file_on_disk("codigo.pdf")
@@ -16,6 +16,8 @@ def main():
 
     #cDISK.remove_file_on_disk("juliano.txt")
 
+    #cDISK.discover_file_on_folder("/michel.txt")
+    
     cDISK.view_disk_data()
 
     cDISK.save_disk()

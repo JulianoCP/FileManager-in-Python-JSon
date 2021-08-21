@@ -10,6 +10,8 @@ SIZE_POINTER_FOLDER = 5 #Tamanho maximo do campo POINTER do FOLDER.
 
 DEFAULT_CARACTER = "=" #Caracter defaul para preencher os campos do json.
 DEFAULT_CARACTER_FOLDEDR = "/" #Caracter defaul para preencher o primeiro folder.
+DEFAULT_CARACTER_FILE = "A" #Caracter defaul para preencher se o bloco é um file na estrutura do folder.
+DEFAULT_CARACTER_FOLDER = "F" #Caracter defaul para preencher se o bloco é um folder na estrutura do folder.
 
 MAX_SIZE_FILE_NAME = 20 #Nome maximo suportado para um file.
 MAX_SIZE_FOLDER_NAME = 20 #Nome maximo suportado para um folder.
@@ -181,6 +183,10 @@ class cDISK_MANAGER:
         else:
             return None
 
+    #Retorna o nome/bloco sem os "="
+    def return_correct_context(self, content):
+        return content.split(DEFAULT_CARACTER)[0]
+
     #Verifica se tem espaco suficiente nos blocos.
     def verify_has_block_available(self, size_file):
         if size_file <= self.disk_data["environmental_variables"]["amount_block_available"]:
@@ -257,23 +263,69 @@ class cDISK_MANAGER:
     #Metodo que remove os dados contidos no block_list[indice_block]
     def remove_block_on_disk(self, indice_block):
         try:
-            self.disk_data["blocks"][indice_block] = None
+            self.disk_data["blocks"][indice_block] = self.default_value_block
             self.disk_data["environmental_variables"]["block_list_available"][indice_block] = 1
         except:
             print("Failed to erase block on disk.")
 
     #Metodo que deleta o arquivo do disco.
     def remove_file_on_disk(self, file_name):
-        try:
-            extract_file = self.disk_data["files"][self.current_folder + file_name]
+        #try:
 
-            for block in extract_file["block_used"]:
-                self.remove_block_on_disk(block)
+            if len(file_name.split("/")) <= 1:
+                indice_pointer_file, index_folder = self.discover_file_on_folder(self.return_correct_context(self.current_folder) + file_name)
+            else:
+                indice_pointer_file, index_folder = self.discover_file_on_folder(file_name)
+
+            self.disk_data["environmental_variables"]["folder_list_available"][ index_folder[0] ][1][ index_folder[1] ] = 1
+            self.disk_data["environmental_variables"]["amount_file_available"] += 1
+            self.disk_data["environmental_variables"]["file_list_available"][indice_pointer_file] = 1
+
+            for interator in self.disk_data["files"][indice_pointer_file]["block_used"]:
+                extract = self.return_correct_context(interator)
+                if extract != "":
+                    self.disk_data["environmental_variables"]["block_list_available"][int(extract)] = 1
+
+            #for
+            #print(self.disk_data["files"][indice])
+
+
+
+                #self.remove_block_on_disk(block)
             
-            self.disk_data["files"].pop((self.current_folder + file_name), None)
-            self.disk_data["folders"][self.current_folder].remove(file_name)
-        except:
-            print("Failed to remove file.")
+            #self.disk_data["files"].pop((self.current_folder + file_name), None)
+            #self.disk_data["folders"][self.current_folder].remove(file_name)
+        #except:
+         #   print("Failed to remove file.")
+
+    #Descobre onde esta o ponteiro do arquivo, e seu retorno envolve:
+        # - [0] = O ponteiro do ARQUIVO, para a estrutura dos files.
+        # - [1] = Vetor contendo:
+            # [0] = Indice de qual folder estamos, na estrutura dos folders.
+            # [1] = Indice de qual subfolder estamos, na esturura interna do folder. 
+    def discover_file_on_folder(self, file_name):
+        discover = file_name.split(DEFAULT_CARACTER_FOLDEDR)
+        if discover[0] == "": discover[0] = DEFAULT_CARACTER_FOLDEDR
+        #Exemplo de file name sem o /dsk
+        #"/tmp/michel.txt"
+        #"/michel.txt"
+    
+        new_folder_name = ""
+        new_name_file = discover[-1]
+        new_name_file = new_name_file.split(".")[0]
+
+        for indice in discover :
+            if indice != discover[-1]:
+                new_folder_name += indice
+
+        for folder in self.disk_data["folders"]:
+            if self.return_correct_context(folder[0]) == new_folder_name:
+                for data in folder[1]:
+                    if data[1] == DEFAULT_CARACTER_FILE:
+                        if self.return_correct_context(data[0]) == new_name_file:
+                            current_folder_index = self.disk_data["folders"].index(folder)
+                            current_inside_index = folder[1].index(data)
+                            return(data[2],[current_folder_index, current_inside_index])
 
     #Metodo que reconstroi o arquivo apatir dos bytes salvos nos blocos.
     def recover_file_on_disk(self, file_name):
@@ -343,7 +395,6 @@ class cDISK_MANAGER:
             self.show_message_if_none("Don't have space to insert file.", has_available_slot)
             chunk = math.ceil((size_64_encode / amount_block ))
 
-
             for indice in range(len(self.disk_data["environmental_variables"]["block_list_available"])):
                 if amount_block <= 0: break
                 if self.disk_data["environmental_variables"]["block_list_available"][indice]:
@@ -373,7 +424,7 @@ class cDISK_MANAGER:
                 if dest_folder[1][interator]:
                     dest_folder[1][interator] = 0
                     self.disk_data["folders"][self.current_folder_indice][1][interator][0] = extract_soft_info_file[0]
-                    self.disk_data["folders"][self.current_folder_indice][1][interator][1] = "A"
+                    self.disk_data["folders"][self.current_folder_indice][1][interator][1] = DEFAULT_CARACTER_FILE
                     self.disk_data["folders"][self.current_folder_indice][1][interator][2] = pointer_save_file
                     break
 
