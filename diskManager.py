@@ -159,7 +159,7 @@ class cDISK_MANAGER:
     def show_message_if_none(self, msg, result):
         if result == None:
             print(msg)
-            exit()
+            return
 
     #Função para montar os blockos usados.
     def set_block_used(self, blocks_list):
@@ -308,7 +308,7 @@ class cDISK_MANAGER:
 
     #Metodo que adiciona novo arquivo no disko/atualizar algum já existente.
     def add_file_on_disk(self, file_name):
-        #try:
+        try:
             start_chunk = 0
             list_block_used = []
             extract_soft_info_file = [None, None]
@@ -316,9 +316,14 @@ class cDISK_MANAGER:
             extract_soft_info_file[0] = self.verify_size_string(extract_hard_info_file[0], MAX_SIZE_FILE_NAME)
             extract_soft_info_file[1] = self.verify_size_string(extract_hard_info_file[1], MAX_SIZE_EXTENSION_FILE)
 
+            #Verifica se os metadados não sao extrapolados e se existe espaco no inode(files)
             self.show_message_if_none("File name, extrapolated size.", extract_soft_info_file[0])
             self.show_message_if_none("File extension extrapolated size.", extract_soft_info_file[1])
-            
+            if self.disk_data["environmental_variables"]["amount_file_available"] <= 0:
+                print("Don't have more space in file.")
+                return
+
+            #Verifica se existe espaco interno no current folder.
             dest_folder = self.disk_data["environmental_variables"]["folder_list_available"][self.current_folder_indice]
             amount_slot_available = 0
             for interator in range(len(dest_folder[1])):
@@ -326,7 +331,7 @@ class cDISK_MANAGER:
                     amount_slot_available += 1
             if amount_slot_available <= 0:
                 print("Don't have more space in current folder.")
-                exit()
+                return
 
             with open(file_name, "rb") as file:
                 file_bytes = file.read()
@@ -359,6 +364,7 @@ class cDISK_MANAGER:
                     self.disk_data["files"][interator].update({"extension_file" : extract_soft_info_file[1]}),
                     self.disk_data["files"][interator].update({"bytes_used" : self.verify_size_string(str(size_64_encode), MAX_SIZE_METADATA_FILE)}),
                     self.disk_data["files"][interator]["block_used"] = self.set_block_used(list_block_used)
+                    self.disk_data["environmental_variables"]["file_list_available"][interator] = 0
                     self.disk_data["environmental_variables"]["amount_file_available"] -= 1
                     pointer_save_file = interator
                     break
@@ -370,8 +376,8 @@ class cDISK_MANAGER:
                     self.disk_data["folders"][self.current_folder_indice][1][interator][1] = "A"
                     self.disk_data["folders"][self.current_folder_indice][1][interator][2] = pointer_save_file
                     break
-            #self.erase_file_upload_to_disk(file_name)
+
             self.persist_data()
 
-       # except:
-        #    print("Failed to add file to disk.")
+        except:
+            print("Failed to add file to disk.")

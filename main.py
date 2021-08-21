@@ -16,7 +16,6 @@ def main():
 
     #cDISK.remove_file_on_disk("juliano.txt")
 
-    cDISK.scan_struct()
     cDISK.view_disk_data()
 
     cDISK.save_disk()
