@@ -9,11 +9,16 @@ def main():
 
     #cDISK.add_file_on_disk("juliano.jpg")
     #cDISK.erase_file_upload_to_disk("juliano.jpg")
+    #cDISK.view_disk_data()
     #cDISK.recover_file_on_disk("juliano.jpg")
 
     cDISK.add_file_on_disk("codigo.pdf")
     cDISK.erase_file_upload_to_disk("codigo.pdf")
     cDISK.recover_file_on_disk("codigo.pdf")
+
+    #cDISK.add_file_on_disk("ola.txt")
+    #cDISK.erase_file_upload_to_disk("ola.txt")
+    #cDISK.recover_file_on_disk("ola.txt")
 
     #cDISK.remove_file_on_disk("codigo.pdf")
 

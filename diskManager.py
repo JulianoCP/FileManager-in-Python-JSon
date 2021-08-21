@@ -355,7 +355,12 @@ class cDISK_MANAGER:
 
             for interator in recover_indice_blocks:
                 recover_data += self.return_correct_context(self.disk_data["blocks"][interator])
-            
+
+            missing_padding = len(recover_data) % 4
+            if missing_padding:
+                recover_data += '='* (4 - missing_padding)
+
+            #recover_data += "="
             #print(recover_data)
 
             decode_b64 = base64.b64decode(recover_data)
@@ -432,11 +437,11 @@ class cDISK_MANAGER:
 
             start_new = 0
             chunk_new = 4096
-            amount_block -= 1
+            #amount_block -= 1
 
             #Coloca os dados do arquivo no disco logico.
             for indice in range(len(self.disk_data["environmental_variables"]["block_list_available"])):
-                if amount_block < 0: break
+                if amount_block <= 0: break
                 if self.disk_data["environmental_variables"]["block_list_available"][indice]:
                     #print("START: {}, CHUNK {}, SIZE_64 {} //// START+CHUNK {}".format(start_chunk, chunk, size_64_encode_manager, start_chunk + chunk))
                     self.disk_data["environmental_variables"]["block_list_available"][indice] = 0
@@ -456,12 +461,13 @@ class cDISK_MANAGER:
                         chunk_new = size_64_encode
                         print("START: {}, CHUNK: {}".format(start_new,chunk_new))
             
+                    amount_block -= 1
+                    print('AMOUNT: ',amount_block)
                     #if chunk >= size_64_encode_manager:
                     #    chunk = size_64_encode_manager
                     #else:
                     #    size_64_encode_manager -= chunk
                     #    start_chunk += chunk
-                    #amount_block -= 1
 
             indice_save_file = 0
             for interator in range(len(self.disk_data["environmental_variables"]["file_list_available"])):
