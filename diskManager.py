@@ -253,7 +253,7 @@ class cDISK_MANAGER:
     def erase_file_upload_to_disk(self, file_name):
         try:
             os.remove(file_name)
-            print(DISK_NAME + " deleted.")
+            print(file_name + " deleted.")
         except:
             print("Failed, file not found.")
 
@@ -369,7 +369,6 @@ class cDISK_MANAGER:
     #Metodo que muda para o diretorio selecionado se existir.
     def change_current_folder(self, folder_name):
         #try:
-            print(folder_name)
             if folder_name == self.return_correct_context(self.current_folder):
                 print("You are already at the root.")
                 return
