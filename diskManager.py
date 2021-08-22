@@ -2,7 +2,7 @@ import json, base64, os, math, sys
 
 DISK_NAME = "disk.dsk" #Nome do disco.
 
-SIZE_DISK = 80 #Tamanho total do disko em KB/s.
+SIZE_DISK = 300 #Tamanho total do disko em KB/s.
 SIZE_BLOCK = 4 #Tamanho dos blocos em KB/s.
 SIZE_BYTES_BLOCK = 4096 #Quantidade de byte em cada bloco.
 SIZE_TYPE_FOLDER = 1 #Tamanho maximo no campo TYPE do FOLDER.
@@ -69,6 +69,7 @@ class cDISK_MANAGER:
                 }
             }
 
+            #PREENCHE A ESTRUTURA DOS ENVIRONMENTAL.
             while(len(struct_to_disk["environmental_variables"]["block_list_available"]) < math.ceil(SIZE_DISK / SIZE_BLOCK)):
                 struct_to_disk["environmental_variables"]["block_list_available"].append(1)
                 struct_to_disk["blocks"].append(self.default_value_block)
@@ -81,7 +82,7 @@ class cDISK_MANAGER:
                 struct_to_disk["environmental_variables"]["file_list_available"].append(1)
             struct_to_disk["environmental_variables"]["amount_file_available"] = len(struct_to_disk["environmental_variables"]["file_list_available"])
             
-            #CRIA OS ESPACOS NO FOLDER INTERNO
+            #CRIA OS ESPACOS NO FOLDER INTERNO.
             vet_folder_inside = []
             for indice in range(AMOUNT_DATA_IN_FOLDER):
                 vet_folder_inside.append([
@@ -340,7 +341,7 @@ class cDISK_MANAGER:
 
     #Metodo que reconstroi o arquivo apatir dos bytes salvos nos blocos.
     def recover_file_on_disk(self, file_name):
-       # try:
+        try:
             recover_indice_blocks = []
             recover_data = ""
             indice, _ = self.discover_file_on_folder(file_name)
@@ -350,25 +351,20 @@ class cDISK_MANAGER:
                 extract = self.return_correct_context(block)
                 if extract != "":
                     recover_indice_blocks.append(int(extract))
-                
-            print("RECOVER>>> ",recover_indice_blocks)
 
             for interator in recover_indice_blocks:
                 recover_data += self.return_correct_context(self.disk_data["blocks"][interator])
 
+            #Verifica o padding do arquivo.
             missing_padding = len(recover_data) % 4
             if missing_padding:
                 recover_data += '='* (4 - missing_padding)
-
-            #recover_data += "="
-            #print(recover_data)
-
             decode_b64 = base64.b64decode(recover_data)
             file = open(file_name, 'wb')
             file.write(decode_b64)
             file.close()
-        #except:
-        #    print("File recovery failed.")
+        except:
+            print("File recovery failed.")
 
     #Metodo que muda para o diretorio selecionado se existir.
     def change_current_folder(self, name_folder):
@@ -387,7 +383,7 @@ class cDISK_MANAGER:
 
     #Metodo que adiciona novo arquivo no disko/atualizar algum já existente.
     def add_file_on_disk(self, file_name):
-       # try:
+        try:
             start_chunk = 0
             list_block_used = []
             extract_soft_info_file = [None, None]
@@ -421,55 +417,33 @@ class cDISK_MANAGER:
             amount_block = math.ceil(size_64_encode / SIZE_BYTES_BLOCK)
             has_available_slot = self.verify_has_block_available(amount_block)
             self.show_message_if_none("Don't have space to insert file.", has_available_slot)
-            size_64_encode_manager = size_64_encode
 
-            print("TAMANHO ORIGINAL DO size_64_encode: ", size_64_encode)
-            print("TAMANHO ORIGINAL DO size_64_encode_manager: ", size_64_encode_manager)
-            print("TAMANHO ORIGINAL DO amount_block: ", amount_block)
-            print("TAMANHO ORIGINAL DO b64[-1]: ", b64[-1])
-
-            if size_64_encode_manager - SIZE_BYTES_BLOCK >= 0:
+            if size_64_encode - SIZE_BYTES_BLOCK >= 0:
                 chunk = SIZE_BYTES_BLOCK
-                size_64_encode_manager -= chunk
             else:
-                chunk = SIZE_BYTES_BLOCK - size_64_encode_manager
-                size_64_encode_manager -= chunk
-
-            start_new = 0
-            chunk_new = 4096
-            #amount_block -= 1
+                chunk = size_64_encode
 
             #Coloca os dados do arquivo no disco logico.
             for indice in range(len(self.disk_data["environmental_variables"]["block_list_available"])):
                 if amount_block <= 0: break
                 if self.disk_data["environmental_variables"]["block_list_available"][indice]:
-                    #print("START: {}, CHUNK {}, SIZE_64 {} //// START+CHUNK {}".format(start_chunk, chunk, size_64_encode_manager, start_chunk + chunk))
                     self.disk_data["environmental_variables"]["block_list_available"][indice] = 0
                     self.disk_data["environmental_variables"]["amount_block_available"] -= 1
-                    #self.add_block_on_disk(indice, b64[start_chunk : start_chunk + chunk])
-                    self.add_block_on_disk(indice, b64[start_new : chunk_new])
+                    self.add_block_on_disk(indice, b64[start_chunk : chunk])
                     list_block_used.append(self.verify_size_string(str(indice), MAX_ADDRESSES_IN_BLOCK))
 
-                    if chunk_new + 4096 <= size_64_encode:
-                        print("ENTREUIIHYY !!!")
-                        start_new = chunk_new
-                        chunk_new += 4096
-                        print("NOVO >>> START: {}, CHUNK: {}".format(start_new,chunk_new))
+                    if chunk + SIZE_BYTES_BLOCK <= size_64_encode:
+                        start_chunk = chunk
+                        chunk += SIZE_BYTES_BLOCK
                     else:
-                        print("START: {}, CHUNK: {}".format(start_new,chunk_new))
-                        start_new = chunk_new
-                        chunk_new = size_64_encode
-                        print("START: {}, CHUNK: {}".format(start_new,chunk_new))
+                        start_chunk = chunk
+                        chunk = size_64_encode
             
                     amount_block -= 1
-                    print('AMOUNT: ',amount_block)
-                    #if chunk >= size_64_encode_manager:
-                    #    chunk = size_64_encode_manager
-                    #else:
-                    #    size_64_encode_manager -= chunk
-                    #    start_chunk += chunk
 
             indice_save_file = 0
+
+            #Preencher o Node, dentro da estrutura dos files.
             for interator in range(len(self.disk_data["environmental_variables"]["file_list_available"])):
                 if self.disk_data["environmental_variables"]["file_list_available"][interator]:
                     self.disk_data["files"][interator].update({"file_name" : extract_soft_info_file[0]}),
@@ -480,6 +454,7 @@ class cDISK_MANAGER:
                     indice_save_file = interator
                     break
 
+            #Preencher o Node, dentro da estrutura do folder.
             for interator in range(len(dest_folder[1])):
                 if dest_folder[1][interator]:
                     dest_folder[1][interator] = 0
@@ -490,5 +465,5 @@ class cDISK_MANAGER:
 
             self.persist_data()
 
-        #except:
-         #   print("Failed to add file to disk.")
+        except:
+            print("Failed to add file to disk.")
