@@ -2,7 +2,7 @@ import json, base64, os, math, sys
 
 DISK_NAME = "disk.dsk" #Nome do disco.
 
-SIZE_DISK = 60 #Tamanho total do disko em KB/s.
+SIZE_DISK = 200 #Tamanho total do disko em KB/s.
 SIZE_BLOCK = 4 #Tamanho dos blocos em KB/s.
 SIZE_BYTES_BLOCK = 4096 #Quantidade de byte em cada bloco.
 SIZE_TYPE_FOLDER = 1 #Tamanho maximo no campo TYPE do FOLDER.
@@ -20,7 +20,7 @@ MAX_SIZE_METADATA_FILE = 20 #Nome maximo para os metadados de um file.
 MAX_ADDRESSES_IN_BLOCK = 5 #Quantidade maximo de blocos que podem ser enderecados, lembrando que 5 == "00000" ou seja até 99999 blocos
 
 AMOUNT_FILE = 2 #Quantidade maxima de files no disco.
-AMOUNT_FOLDER = 3 #Quantidade maxima de folders no disco.
+AMOUNT_FOLDER = 10 #Quantidade maxima de folders no disco.
 AMOUNT_DATA_IN_FOLDER = 3 #Quantidade de itens em um folder.
 AMOUNT_BLOCK_AVAILABLE_TO_FILE = 20 #Quantidade maximo de blocks de enderecamento que pode ser usadas por um file.
 
@@ -283,10 +283,27 @@ class cDISK_MANAGER:
         except:
             print("Failed to erase block on disk.")
 
+    #Mostra o caminho do diretorio atual.
+    def show_path(self):
+        #print(self.return_correct_context(self.current_folder))
+        return self.return_correct_context(self.current_folder)
+    
+    #Nossa função de ls, ou seja mostra nossos arquivos/diretorios dentro do diretorio atual.
+    def show_data_in_folder(self):
+        for folder in self.disk_data["folders"][self.current_folder_indice][1]:
+            if folder[1] == "F":
+                extract = self.return_correct_context(folder[0])
+                extract = extract.split("/")
+                print(extract[-1])
+            elif folder[1] == "A":
+                extract_data = self.disk_data["files"][int(folder[2])]
+                extract_name = self.return_correct_context(extract_data["file_name"])
+                extract_name += "." + self.return_correct_context(extract_data["extension_file"])
+                print(extract_name)
+
     #Metodo que deleta o arquivo do disco.
     def remove_file_on_disk(self, file_name):
         try:
-            
             indice_pointer_file, index_folder = self.discover_file_on_folder(file_name)
 
             self.disk_data["environmental_variables"]["folder_list_available"][index_folder[0]][1][index_folder[1]] = 1
@@ -352,15 +369,34 @@ class cDISK_MANAGER:
     #Metodo que muda para o diretorio selecionado se existir.
     def change_current_folder(self, folder_name):
         #try:
-            if folder_name == "..":
-                #new_folder = ""
-                #extract = self.current_folder.split("/")
+            print(folder_name)
+            if folder_name == self.return_correct_context(self.current_folder):
+                print("You are already at the root.")
+                return
+            elif folder_name == "..":
+                new_folder = ""
+                extract = self.return_correct_context(self.current_folder)
+                extract = extract.split(DEFAULT_CARACTER_FOLDER_ROOT)
+                extract[0] = DEFAULT_CARACTER_FOLDER_ROOT
 
-                #for interator in range(len(extract) - 1):
-                #    new_folder += extract[interator]
+                for interator in range(len(extract) - 1):
+                    if interator != 0:
+                        if interator == len(extract) - 2:
+                            new_folder += extract[interator]
+                        else:
+                            new_folder += extract[interator] + DEFAULT_CARACTER_FOLDER_ROOT
+                    else:
+                        new_folder += extract[interator]
 
-                #self.current_folder = self.disk_data["folders"][0][0]
-                #self.current_folder_indice = 0
+                new_folder = self.verify_size_string(new_folder, MAX_SIZE_FOLDER_NAME)
+                indice = None
+
+                for interator in range(len(self.disk_data["folders"])):
+                    if self.disk_data["folders"][interator][0] == new_folder:
+                        indice = interator
+
+                self.current_folder = new_folder
+                self.current_folder_indice = indice
                 return
 
             elif folder_name == ".":
@@ -370,13 +406,18 @@ class cDISK_MANAGER:
 
             else:
                 for interator in range(len(self.disk_data["folders"])):
-                    if self.disk_data["folders"][interator][0] == self.verify_size_string(self.return_correct_context(self.current_folder) + folder_name, MAX_SIZE_FOLDER_NAME):
+                    discover = ""
+                    if self.current_folder_indice != 0:
+                        discover = self.return_correct_context(self.current_folder) + DEFAULT_CARACTER_FOLDER_ROOT + folder_name
+                    else:
+                        discover = self.return_correct_context(self.current_folder) + folder_name
+
+                    if self.disk_data["folders"][interator][0] == self.verify_size_string(discover, MAX_SIZE_FOLDER_NAME):
                         self.current_folder = self.disk_data["folders"][interator][0]
                         self.current_folder_indice = interator
                         return
 
                 return None
-
         #except:
          #   print("Failure, invalid directory.")
 
