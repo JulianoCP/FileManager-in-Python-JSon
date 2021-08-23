@@ -314,16 +314,20 @@ class cDISK_MANAGER:
     
     #Nossa função de ls, ou seja mostra nossos arquivos/diretorios dentro do diretorio atual.
     def show_data_in_folder(self):
-        for folder in self.disk_data["folders"][self.current_folder_indice][1]:
-            if folder[1] == "F":
-                extract = self.return_correct_context(folder[0])
-                extract = extract.split("/")
-                print(extract[-1] + " ", end = '')
-            elif folder[1] == "A":
-                extract_data = self.disk_data["files"][int(folder[2])]
-                extract_name = self.return_correct_context(extract_data["file_name"])
-                extract_name += "." + self.return_correct_context(extract_data["extension_file"])
-                print(extract_name + " ", end = '')
+        data_env = self.disk_data["environmental_variables"]["folder_list_available"][self.current_folder_indice][1]
+        for indice in range(len(data_env)):
+            if data_env[indice] == 0:
+                folder = self.disk_data["folders"][self.current_folder_indice][1][indice]
+                if folder[1] == "F":
+                    extract = self.return_correct_context(folder[0])
+                    extract = extract.split("/")
+                    print(extract[-1] + " ", end = '')
+                elif folder[1] == "A":
+                    extract_data = self.disk_data["files"][int(folder[2])]
+                    extract_name = self.return_correct_context(extract_data["file_name"])
+                    extract_name += "." + self.return_correct_context(extract_data["extension_file"])
+                    print(extract_name + " ", end = '')
+
         print("")
 
     #Metodo que deleta o arquivo do disco.

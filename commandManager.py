@@ -70,26 +70,89 @@ class cCOMMAND_MANAGER:
         #Trata o commando CP.
         if ("cp" == command):
             self.save_current_folder()
-            if len(parametros) <= 1 :
-                print("Invalid command.")
-                return
 
             file_parameter = parametros[0].split("/")
-            tmp_parametros = parametros[1].split("/")
+            if len(parametros) > 1:
+                tmp_parametros = parametros[1].split("/")
+            else:
+                tmp_parametros = None
 
-            if self.verify_caracter_empty(tmp_parametros) >= 0:
+            if tmp_parametros == None:
+                if len(file_parameter) > 2:
+                    self.cDISK.change_current_folder(".")
+                
+                for folder_interator in file_parameter[:-1]:
+                    if folder_interator != "":
+                        self.cDISK.change_current_folder(folder_interator)
+
+                self.cDISK.recover_file_on_disk(file_parameter[-1])
+                self.recover_old_folder()
+                return
+            else:
                 if len(tmp_parametros) > 2:
                     self.cDISK.change_current_folder(".")
-
+                
                 for folder_interator in tmp_parametros:
                     if folder_interator != "":
                         self.cDISK.change_current_folder(folder_interator)
 
                 self.cDISK.add_file_on_disk(file_parameter[-1])
 
-            self.recover_old_folder()
-            return
+                self.recover_old_folder()
+                return
 
+        #Trata o commando MV.
+        if ("mv" == command):
+            self.save_current_folder()
+            is_recursive = False
+
+            file_parameter = parametros[0].split("/")
+            if len(parametros) > 1:
+                tmp_parametros = parametros[1].split("/")
+            else:
+                tmp_parametros = None
+
+            if tmp_parametros == None:
+                if len(file_parameter) > 2:
+                    self.cDISK.change_current_folder(".")
+                    is_recursive = True
+                
+                for folder_interator in file_parameter[:-1]:
+                    if folder_interator != "":
+                        self.cDISK.change_current_folder(folder_interator)
+
+                self.cDISK.recover_file_on_disk(file_parameter[-1])
+                
+                if is_recursive:
+                    print("qwe: ", file_parameter[-1])
+                    self.cDISK.remove_file_on_disk(file_parameter[-1])
+                    self.recover_old_folder()
+                else:
+                    print("qwwwe2e: ", file_parameter[-1])
+                    self.recover_old_folder()
+                    self.cDISK.remove_file_on_disk(file_parameter[-1])
+
+                return
+            else:
+                if len(tmp_parametros) > 2:
+                    self.cDISK.change_current_folder(".")
+                    is_recursive = True
+                
+                for folder_interator in tmp_parametros:
+                    if folder_interator != "":
+                        self.cDISK.change_current_folder(folder_interator)
+
+                self.cDISK.add_file_on_disk(file_parameter[-1])
+
+                if is_recursive:
+                    self.cDISK.remove_file_on_disk(file_parameter[-1])
+                    self.recover_old_folder()
+                else:
+                    self.recover_old_folder()
+                    self.cDISK.remove_file_on_disk(file_parameter[-1])
+
+                return
+        
         #Trata o commando CD.
         if ("cd" == command):
             tmp_parametros = parametros[0].split("/")
