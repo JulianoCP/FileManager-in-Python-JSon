@@ -33,38 +33,34 @@ def main():
     #cDISK.recover_file_on_disk("ola.txt")
     #cDISK.remove_file_on_disk("ola.txt")
 
-    diretorio_atual = cDISK.show_path()
-    while(1):
-        cmd = input(diretorio_atual+" # ")
-        cmd = cmd.split(" ")
-
-        if cmd[0] == "ls":
-            cDISK.show_data_in_folder()
-        elif cmd[0] == "mkdir":
-            cDISK.add_folder_on_disk(cmd[1])
-        elif cmd[0] == "cd":
-            cDISK.change_current_folder(cmd[1])
-        elif cmd[0] == "pwd":
-            print(diretorio_atual)
-        elif cmd[0] == "show":
-            cDISK.view_disk_data()
-        elif cmd[0] == "save":
-            cDISK.persist_data()
-        elif cmd[0] == "load":
-            cDISK.add_file_on_disk(cmd[1])
-        elif cmd[0] == "rm":
-            cDISK.erase_file_upload_to_disk(cmd[1])
-        elif cmd[0] == "rc":
-            cDISK.recover_file_on_disk(cmd[1])
-        diretorio_atual = cDISK.show_path()
-
     cDISK.save_disk()
-
-    #cDISK.view_disk_data()
+    cDISK.view_disk_data()
     cDISK.erase_disk()
 
-    #VER DPS
-    #cDISK.discover_file_on_folder("michel.txt")
+    #diretorio_atual = cDISK.show_path()
+    #while(1):
+    #    cmd = input(diretorio_atual+" # ")
+    #    cmd = cmd.split(" ")
+
+    #    if cmd[0] == "ls":
+    #        cDISK.show_data_in_folder()
+    #    elif cmd[0] == "mkdir":
+    #        cDISK.add_folder_on_disk(cmd[1])
+    #    elif cmd[0] == "cd":
+    #        cDISK.change_current_folder(cmd[1])
+    #    elif cmd[0] == "pwd":
+    #        print(diretorio_atual)
+    #    elif cmd[0] == "show":
+    #        cDISK.view_disk_data()
+    #    elif cmd[0] == "save":
+    #        cDISK.persist_data()
+    #    elif cmd[0] == "load":
+    #        cDISK.add_file_on_disk(cmd[1])
+    #    elif cmd[0] == "rm":
+    #        cDISK.erase_file_upload_to_disk(cmd[1])
+    #    elif cmd[0] == "rc":
+    #        cDISK.recover_file_on_disk(cmd[1])
+    #    diretorio_atual = cDISK.show_path()
 
 if __name__ == '__main__': 
     main() 

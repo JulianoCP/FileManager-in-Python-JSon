@@ -2,7 +2,7 @@ import json, base64, os, math, sys
 
 DISK_NAME = "disk.dsk" #Nome do disco.
 
-SIZE_DISK = 200 #Tamanho total do disko em KB/s.
+SIZE_DISK = 8 #Tamanho total do disko em KB/s.
 SIZE_BLOCK = 4 #Tamanho dos blocos em KB/s.
 SIZE_BYTES_BLOCK = 4096 #Quantidade de byte em cada bloco.
 SIZE_TYPE_FOLDER = 1 #Tamanho maximo no campo TYPE do FOLDER.
@@ -20,8 +20,8 @@ MAX_SIZE_METADATA_FILE = 20 #Nome maximo para os metadados de um file.
 MAX_ADDRESSES_IN_BLOCK = 5 #Quantidade maximo de blocos que podem ser enderecados, lembrando que 5 == "00000" ou seja até 99999 blocos
 
 AMOUNT_FILE = 2 #Quantidade maxima de files no disco.
-AMOUNT_FOLDER = 10 #Quantidade maxima de folders no disco.
-AMOUNT_DATA_IN_FOLDER = 3 #Quantidade de itens em um folder.
+AMOUNT_FOLDER = 11 #Quantidade maxima de folders no disco.
+AMOUNT_DATA_IN_FOLDER = 7 #Quantidade de itens em um folder.
 AMOUNT_BLOCK_AVAILABLE_TO_FILE = 20 #Quantidade maximo de blocks de enderecamento que pode ser usadas por um file.
 
 #Class responsavel por manipular as informações do disko que vao ser salva no .dsk
@@ -74,7 +74,6 @@ class cDISK_MANAGER:
                 struct_to_disk["environmental_variables"]["block_list_available"].append(1)
                 struct_to_disk["blocks"].append(self.default_value_block)
             struct_to_disk["environmental_variables"]["amount_block_available"] = len(struct_to_disk["environmental_variables"]["block_list_available"])
-            self.register_env += str(struct_to_disk["environmental_variables"])
 
             #CRIA OS FILES.
             for interator in range(AMOUNT_FILE):
@@ -112,32 +111,45 @@ class cDISK_MANAGER:
                     ]
                 )
 
-            #TRATANDO O FOLDER RAIZ
-            self.register_folder += str(struct_to_disk["folders"])
+            #TRATANDO O FOLDER RAIZ.
             struct_to_disk["folders"][0][0] = self.current_folder
             struct_to_disk["environmental_variables"]["folder_list_available"][0][0] = 0
             struct_to_disk["environmental_variables"]["amount_folder_available"] -= 1
 
-            #Seta o primeiro bloco com dados dos files.
-            mnt_data = self.verify_size_string(("files" + self.register_files), SIZE_BYTES_BLOCK)
-            self.show_message_if_none("Failure, blocking limit for extrapolated files.", mnt_data)
-            struct_to_disk["blocks"][0] = mnt_data
-            struct_to_disk["environmental_variables"]["block_list_available"][0] = 0
-            struct_to_disk["environmental_variables"]["amount_block_available"] -= 1 #UTILIZANDO UM BLOCO LOGICO PARA OS METADADOS DA TABELA DE ARQUIVOS.
+            #Preenche o registro do enviromental.
+            for mock_env in struct_to_disk["environmental_variables"]:
+                self.register_env += str(mock_env) + str(struct_to_disk["environmental_variables"][mock_env])
 
-            #Seta o segundo bloco com dados dos folders.
-            mnt_data = self.verify_size_string(("folders" + self.register_folder), SIZE_BYTES_BLOCK)
-            self.show_message_if_none("Failure, blocking limit for extrapolated folders.", mnt_data)
-            struct_to_disk["blocks"][1] = mnt_data
-            struct_to_disk["environmental_variables"]["block_list_available"][1] = 0
-            struct_to_disk["environmental_variables"]["amount_block_available"] -= 1 #UTILIZANDO UM BLOCO LOGICO PARA OS METADADOS DA TABELA DE FOLDERS.
+            #Preenche o registro do folders.
+            for mock_folder in struct_to_disk["folders"]:
+                self.register_folder += str(mock_folder)
+            self.register_folder += "]"
 
-            #Seta o segundo bloco com dados dos environmental.
-            mnt_data = self.verify_size_string(("environmental_variables" + self.register_env), SIZE_BYTES_BLOCK)
-            self.show_message_if_none("Failure, blocking limit for extrapolated environmental.", mnt_data)
-            struct_to_disk["blocks"][2] = mnt_data
-            struct_to_disk["environmental_variables"]["block_list_available"][2] = 0
-            struct_to_disk["environmental_variables"]["amount_block_available"] -= 1 #UTILIZANDO UM BLOCO LOGICO PARA OS METADADOS DA TABELA DE FOLDERS.
+            #Preenche o registro do files.
+            for mock_file in struct_to_disk["files"]:
+                for key in mock_file:
+                    self.register_files += str(key) + str(mock_file[key])
+
+            #Criando estrutura para alocar blocos logicos com a estrutura já existente do json.
+            mnt_data = ""
+            mnt_data += "files" + self.register_files
+            mnt_data += "folders[" + self.register_folder
+            mnt_data += "environmental_variables" + self.register_env
+            amount_block = math.ceil(len(mnt_data) / SIZE_BYTES_BLOCK)
+
+            #Caso ocupar mais de um bloco, entra no if, caso contrario entrará no else.
+            if amount_block > 1:
+                start = 0
+                chunk = SIZE_BYTES_BLOCK
+                for interator in range(amount_block):
+                    struct_to_disk["blocks"][interator] = self.verify_size_string(mnt_data[start : start + chunk], SIZE_BYTES_BLOCK)
+                    struct_to_disk["environmental_variables"]["block_list_available"][interator] = 0
+                    struct_to_disk["environmental_variables"]["amount_block_available"] -= 1
+                    start += chunk
+            else:
+                struct_to_disk["blocks"][0] = self.verify_size_string(mnt_data, SIZE_BYTES_BLOCK)
+                struct_to_disk["environmental_variables"]["block_list_available"][0] = 0
+                struct_to_disk["environmental_variables"]["amount_block_available"] -= 1
 
             with open(DISK_NAME, "w") as file_write:
                 json.dump(struct_to_disk, file_write)
@@ -156,8 +168,6 @@ class cDISK_MANAGER:
                         "bytes_used" : self.create_default_name_using_size(MAX_SIZE_METADATA_FILE),
                         "block_used" : self.default_block_used_files
                     }
-        for key in mock_file:
-            self.register_files += str(key) + str(mock_file[key])
         return mock_file
 
     #Cria uma string de caracter defaulm usando como base um tamanho passado por parametro.
@@ -213,10 +223,11 @@ class cDISK_MANAGER:
 
     #Função que faz a releitura das estruturas padroes do json e rescreve os blocos logicos.
     def scan_struct(self):
+
         self.register_files = ""
         self.register_folder = ""
         self.register_env = ""
-
+        
         for mock_file in self.disk_data["files"]:
             for key in mock_file:
                 self.register_files += str(key) + str(mock_file[key])
@@ -228,9 +239,21 @@ class cDISK_MANAGER:
             self.register_folder += str(mock_folder)
         self.register_folder += "]"
 
-        self.disk_data["blocks"][0] = self.verify_size_string(("files" + self.register_files), SIZE_BYTES_BLOCK)
-        self.disk_data["blocks"][1] = self.verify_size_string(("folders[" + self.register_folder), SIZE_BYTES_BLOCK)
-        self.disk_data["blocks"][2] = self.verify_size_string(("environmental_variables" + self.register_env), SIZE_BYTES_BLOCK)
+        mnt_data = ""
+        mnt_data += "files" + self.register_files
+        mnt_data += "folders[" + self.register_folder
+        mnt_data += "environmental_variables" + self.register_env
+
+        amount_block = math.ceil(len(mnt_data) / SIZE_BYTES_BLOCK)
+
+        if amount_block > 1:
+            start = 0
+            chunk = SIZE_BYTES_BLOCK
+            for interator in range(amount_block):
+                self.disk_data["blocks"][interator] = self.verify_size_string(mnt_data[start : start + chunk], SIZE_BYTES_BLOCK)
+                start += chunk
+        else:
+            self.disk_data["blocks"][0] = self.verify_size_string(mnt_data, SIZE_BYTES_BLOCK)
 
     #Metodo para ser chamada antes de fechar o programa
     def save_disk(self):
