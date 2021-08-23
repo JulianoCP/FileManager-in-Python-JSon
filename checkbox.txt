@@ -30,21 +30,21 @@
 [X] - Função de recuperar arquivo do Virtual -> Real - recover_file_on_disk
 
 --------------- ISSUES FUTURAS-------
-[ ] - Melhorar o CD
+[x] - Melhorar o CD
 
-[ ] - Rever o LS
+[x] - Rever o LS
 
-[ ] - rever o MKDIR 
+[x] - rever o MKDIR 
 
-[ ] - Fazer os Comandos:
-        [ ] - CP
-        [ ] - MV
-        [ ] - RM
-        [ ] - RMDIR
-        [ ] - RECOVER -> Uma especie de MV do VIRTUAL -> FISICO
-        [ ] - FORMAT DSK
-        [ ] - EXIT
-        [ ] - SAVE DSK
+[X] - Fazer os Comandos:
+        [x] - CP
+        [X] - MV
+        [X] - RM
+        [X] - RMDIR
+        [x] - RECOVER -> Uma especie de MV do VIRTUAL -> FISICO
+        [x] - FORMAT DSK
+        [x] - EXIT
+        [X] - SAVE DSK
 
 -------------------------- 20/08/2021
 COmo replicar:  Adicionar michel.txt e depois juliano.txt

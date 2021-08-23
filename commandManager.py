@@ -184,6 +184,40 @@ class cCOMMAND_MANAGER:
             self.recover_old_folder()
             return
         
+        #Trata o commando RM.
+        if ("rm" == command):
+            self.save_current_folder()
+            tmp_parametros = parametros[0].split("/")
+
+            if self.verify_caracter_empty(tmp_parametros) > 0:
+                if len(tmp_parametros) > 2:
+                    self.cDISK.change_current_folder(".")
+
+                for folder_interator in tmp_parametros[:-1]:
+                    if folder_interator != "":
+                        self.cDISK.change_current_folder(folder_interator)
+
+            self.cDISK.remove_file_on_disk(tmp_parametros[-1])
+            self.recover_old_folder()
+            return
+        
+        #Trata o commando RMDIR.
+        if ("rmdir" == command):
+            self.save_current_folder()
+            tmp_parametros = parametros[0].split("/")
+
+            if self.verify_caracter_empty(tmp_parametros) > 0:
+                if len(tmp_parametros) > 2:
+                    self.cDISK.change_current_folder(".")
+
+                for folder_interator in tmp_parametros[:-1]:
+                    if folder_interator != "":
+                        self.cDISK.change_current_folder(folder_interator)
+
+            self.cDISK.remove_folder_on_disk(tmp_parametros[-1])
+            self.recover_old_folder()
+            return
+
         #Trata o commando VIEW.
         if ("view" == command):
             self.cDISK.view_disk_data()

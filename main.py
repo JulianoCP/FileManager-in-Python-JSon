@@ -37,9 +37,5 @@ def main():
     #cDISK.recover_file_on_disk("ola.txt")
     #cDISK.remove_file_on_disk("ola.txt")
 
-    #cDISK.save_disk()
-    #cDISK.view_disk_data()
-    #cDISK.erase_disk()
-
 if __name__ == '__main__':
     main()
