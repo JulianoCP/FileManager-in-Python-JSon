@@ -1,5 +1,4 @@
 from commandManager import cCOMMAND_MANAGER
-import os
 
 def main():
     cCOMMAND = cCOMMAND_MANAGER()
