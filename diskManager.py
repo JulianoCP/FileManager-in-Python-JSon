@@ -2,7 +2,7 @@ import json, base64, os, math, sys
 
 DISK_NAME = "disk.dsk" #Nome do disco.
 
-SIZE_DISK = 8 #Tamanho total do disko em KB/s.
+SIZE_DISK = 1024 #Tamanho total do disko em KB/s.
 SIZE_BLOCK = 4 #Tamanho dos blocos em KB/s.
 SIZE_BYTES_BLOCK = 4096 #Quantidade de byte em cada bloco.
 SIZE_TYPE_FOLDER = 1 #Tamanho maximo no campo TYPE do FOLDER.
@@ -13,15 +13,15 @@ DEFAULT_CARACTER_FOLDER_ROOT = "/" #Caracter defaul para preencher o primeiro fo
 DEFAULT_CARACTER_FILE = "A" #Caracter defaul para preencher se o bloco é um file na estrutura do folder.
 DEFAULT_CARACTER_FOLDER = "F" #Caracter defaul para preencher se o bloco é um folder na estrutura do folder.
 
-MAX_SIZE_FILE_NAME = 20 #Nome maximo suportado para um file.
-MAX_SIZE_FOLDER_NAME = 20 #Nome maximo suportado para um folder.
+MAX_SIZE_FILE_NAME = 36 #Nome maximo suportado para um file.
+MAX_SIZE_FOLDER_NAME = 36 #Nome maximo suportado para um folder.
 MAX_SIZE_EXTENSION_FILE = 3 #Nome maximo de extensao
 MAX_SIZE_METADATA_FILE = 20 #Nome maximo para os metadados de um file.
 MAX_ADDRESSES_IN_BLOCK = 5 #Quantidade maximo de blocos que podem ser enderecados, lembrando que 5 == "00000" ou seja até 99999 blocos
 
-AMOUNT_FILE = 2 #Quantidade maxima de files no disco.
-AMOUNT_FOLDER = 11 #Quantidade maxima de folders no disco.
-AMOUNT_DATA_IN_FOLDER = 7 #Quantidade de itens em um folder.
+AMOUNT_FILE = 234 #Quantidade maxima de files no disco.
+AMOUNT_FOLDER = 16 #Quantidade maxima de folders no disco.
+AMOUNT_DATA_IN_FOLDER = 8 #Quantidade de itens em um folder.
 AMOUNT_BLOCK_AVAILABLE_TO_FILE = 20 #Quantidade maximo de blocks de enderecamento que pode ser usadas por um file.
 
 #Class responsavel por manipular as informações do disko que vao ser salva no .dsk
@@ -163,7 +163,7 @@ class cDISK_MANAGER:
     #Cria mockup de files.
     def create_default_file(self):
         mock_file = {
-                        "file_name" : self.create_default_name_using_size(MAX_SIZE_METADATA_FILE),
+                        "file_name" : self.create_default_name_using_size(MAX_SIZE_FILE_NAME),
                         "extension_file" : self.create_default_name_using_size(MAX_SIZE_EXTENSION_FILE),
                         "bytes_used" : self.create_default_name_using_size(MAX_SIZE_METADATA_FILE),
                         "block_used" : self.default_block_used_files
@@ -218,6 +218,7 @@ class cDISK_MANAGER:
         try:
             with open(DISK_NAME, "w") as file_write:
                 json.dump(self.disk_data, file_write)
+            print("persisted data.")
         except:
             print("Failed to persist data.")
 
@@ -261,6 +262,7 @@ class cDISK_MANAGER:
             self.scan_struct()
             self.file_pointer.close()
             self.persist_data()
+            print( "saved " + DISK_NAME)
         except:
             print("Failed, disk impossible to save.")
 
@@ -268,7 +270,7 @@ class cDISK_MANAGER:
     def erase_disk(self):
         try:
             os.remove(DISK_NAME)
-            print(DISK_NAME + " deleted.")
+            print(DISK_NAME + " erased.")
         except:
             print("Failed, disk not found.")
     
@@ -316,12 +318,13 @@ class cDISK_MANAGER:
             if folder[1] == "F":
                 extract = self.return_correct_context(folder[0])
                 extract = extract.split("/")
-                print(extract[-1])
+                print(extract[-1] + " ", end = '')
             elif folder[1] == "A":
                 extract_data = self.disk_data["files"][int(folder[2])]
                 extract_name = self.return_correct_context(extract_data["file_name"])
                 extract_name += "." + self.return_correct_context(extract_data["extension_file"])
-                print(extract_name)
+                print(extract_name + " ", end = '')
+        print("")
 
     #Metodo que deleta o arquivo do disco.
     def remove_file_on_disk(self, file_name):
