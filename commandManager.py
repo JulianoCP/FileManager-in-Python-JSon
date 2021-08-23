@@ -70,10 +70,13 @@ class cCOMMAND_MANAGER:
         #Trata o commando CP.
         if ("cp" == command):
             self.save_current_folder()
-
             file_parameter = parametros[0].split("/")
+
             if len(parametros) > 1:
-                tmp_parametros = parametros[1].split("/")
+                if self.verify_caracter_empty(parametros[1]) <= 0:
+                    tmp_parametros = None
+                else:
+                    tmp_parametros = parametros[1].split("/")
             else:
                 tmp_parametros = None
 
@@ -103,12 +106,15 @@ class cCOMMAND_MANAGER:
 
         #Trata o commando MV.
         if ("mv" == command):
-            self.save_current_folder()
             is_recursive = False
-
+            self.save_current_folder()
             file_parameter = parametros[0].split("/")
+
             if len(parametros) > 1:
-                tmp_parametros = parametros[1].split("/")
+                if self.verify_caracter_empty(parametros[1]) <= 0:
+                    tmp_parametros = None
+                else:
+                    tmp_parametros = parametros[1].split("/")
             else:
                 tmp_parametros = None
 
@@ -124,11 +130,9 @@ class cCOMMAND_MANAGER:
                 self.cDISK.recover_file_on_disk(file_parameter[-1])
                 
                 if is_recursive:
-                    print("qwe: ", file_parameter[-1])
                     self.cDISK.remove_file_on_disk(file_parameter[-1])
                     self.recover_old_folder()
                 else:
-                    print("qwwwe2e: ", file_parameter[-1])
                     self.recover_old_folder()
                     self.cDISK.remove_file_on_disk(file_parameter[-1])
 
@@ -145,11 +149,11 @@ class cCOMMAND_MANAGER:
                 self.cDISK.add_file_on_disk(file_parameter[-1])
 
                 if is_recursive:
-                    self.cDISK.remove_file_on_disk(file_parameter[-1])
+                    self.cDISK.erase_file_upload_to_disk(file_parameter[-1])
                     self.recover_old_folder()
                 else:
                     self.recover_old_folder()
-                    self.cDISK.remove_file_on_disk(file_parameter[-1])
+                    self.cDISK.erase_file_upload_to_disk(file_parameter[-1])
 
                 return
         

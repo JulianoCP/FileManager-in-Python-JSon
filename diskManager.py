@@ -327,7 +327,6 @@ class cDISK_MANAGER:
                     extract_name = self.return_correct_context(extract_data["file_name"])
                     extract_name += "." + self.return_correct_context(extract_data["extension_file"])
                     print(extract_name + " ", end = '')
-
         print("")
 
     #Metodo que deleta o arquivo do disco.
