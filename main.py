@@ -1,8 +1,14 @@
+from commandManager import cCOMMAND_MANAGER
 import os
-from diskManager import cDISK_MANAGER
 
 def main():
-    cDISK = cDISK_MANAGER()
+    cCOMMAND = cCOMMAND_MANAGER()
+
+    while(1):
+        cmd = input(" # ")
+        cmd = cmd.split(" ")
+
+        cCOMMAND.command_line(cmd)
 
     #cDISK.add_file_on_disk("juliano.jpg")
     #cDISK.erase_file_upload_to_disk("juliano.jpg")
@@ -18,7 +24,7 @@ def main():
     #cDISK.erase_file_upload_to_disk("ola.txt")
     #cDISK.recover_file_on_disk("ola.txt")
     #cDISK.remove_file_on_disk("ola.txt")
-    
+
     #cDISK.add_folder_on_disk("usr")
     #cDISK.change_current_folder("var")
     #cDISK.add_file_on_disk("juliano.txt")
@@ -33,9 +39,9 @@ def main():
     #cDISK.recover_file_on_disk("ola.txt")
     #cDISK.remove_file_on_disk("ola.txt")
 
-    cDISK.save_disk()
-    cDISK.view_disk_data()
-    cDISK.erase_disk()
+    #cDISK.save_disk()
+    #cDISK.view_disk_data()
+    #cDISK.erase_disk()
 
     #diretorio_atual = cDISK.show_path()
     #while(1):
@@ -62,5 +68,5 @@ def main():
     #        cDISK.recover_file_on_disk(cmd[1])
     #    diretorio_atual = cDISK.show_path()
 
-if __name__ == '__main__': 
-    main() 
+if __name__ == '__main__':
+    main()

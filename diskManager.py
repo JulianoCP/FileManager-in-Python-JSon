@@ -308,8 +308,7 @@ class cDISK_MANAGER:
 
     #Mostra o caminho do diretorio atual.
     def show_path(self):
-        #print(self.return_correct_context(self.current_folder))
-        return self.return_correct_context(self.current_folder)
+        print(self.return_correct_context(self.current_folder))
     
     #Nossa função de ls, ou seja mostra nossos arquivos/diretorios dentro do diretorio atual.
     def show_data_in_folder(self):
@@ -391,7 +390,7 @@ class cDISK_MANAGER:
 
     #Metodo que muda para o diretorio selecionado se existir.
     def change_current_folder(self, folder_name):
-        #try:
+        try:
             if folder_name == self.return_correct_context(self.current_folder):
                 print("You are already at the root.")
                 return
@@ -439,9 +438,10 @@ class cDISK_MANAGER:
                         self.current_folder_indice = interator
                         return
 
+                print("Diretorio não existente!")
                 return None
-        #except:
-         #   print("Failure, invalid directory.")
+        except:
+            print("Failure, invalid directory.")
 
      #Descobre onde esta o ponteiro do folder, e retorna ele.
     def discover_folder_on_folder(self, folder_name):
