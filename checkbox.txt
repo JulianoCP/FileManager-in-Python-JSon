@@ -1,0 +1,92 @@
+--------------- ISSUES GERAIS-------
+
+[x] - In Folder adicionar 3 campos (Nome, Tipo, ponteiro_indice)
+[X] - Fazer os metadados ser registrados nos blocos logicos do json.
+[X] - Fazer a exclusão ser refletida em toda a estrutura:
+        - enviromentts variables
+            - amount_block
+            - amount_file
+            - amount_folder
+[X] - Adicionar o Enviroments_variables na memoria Logica (Blocks)
+[X] - ~~Renomear Funções
+[ ] - Mostrar para o Usuario feedback Textuais:
+        [ ] - Mostrar que não pode excluir recursivamente
+        [ ] - Mostrar que para excluir a pasta precisa deletar os arquivos 1 por 1 dentro dela
+        [ ] - Não é possivel criar recursivamente Pastas
+[X] - Função de Listar o Diretorio no Virtual. - ls - show_data_in_folder
+[X] - Função de pwd no Virtual. - show_path
+[X] - Função de excluir diretorio - rmdir - remove_folder_on_disk
+[X] - Função de excluir arquivo- rm - remove_file_on_disk
+[X] - Função de entrar no diretorio - cd - change_current_folder
+
+[ ] - Função de copiar arquivos: cp
+        [X] - Copiar arquivo do REAL -> Virtual - add_file_on_disk
+        [ ]!! - Copiar arquivo do Virtual -> Virtual
+
+[ ] - Função de mover Arquivo: mv
+        [X] - mover do real -> Virtual - add_file_on_disk & erase_file_upload_to_disk
+        [ ]!! - mover do virtual -> Virtual
+
+[X] - Função de recuperar arquivo do Virtual -> Real - recover_file_on_disk
+
+--------------- ISSUES FUTURAS-------
+[ ] - Melhorar o CD
+
+[ ] - Rever o LS
+
+[ ] - rever o MKDIR 
+
+[ ] - Fazer os Comandos:
+        [ ] - CP
+        [ ] - MV
+        [ ] - RM
+        [ ] - RMDIR
+        [ ] - RECOVER -> Uma especie de MV do VIRTUAL -> FISICO
+        [ ] - FORMAT DSK
+        [ ] - EXIT
+        [ ] - SAVE DSK
+
+-------------------------- 20/08/2021
+COmo replicar:  Adicionar michel.txt e depois juliano.txt
+[X] - ponteiro_indice do arquivo nos folders errado
+[X] - tratar o file_list_avaiable no enviromental_vartiables
+
+-------------------------- 21/08/2021
+[X] - Na função discover_file_on_folder, ponderar se devemos concatenar os nomes dos arquivos com "/" na nossa estrutura Json
+        Hj esta: /tmpusr -> /tmp/usr
+
+-------------------------- 22/08/2021
+[X] - Verificar se depois das modificaçes a exclusão esta funcionando e persistindo no .json
+
+[X] - Começar a implementação de todos as funções do Folder
+     [X] - Criar
+     [X] - Deletar
+
+
+                                --------------- Considerações -------------
+Legenda:
+[X] - Desconsiderar, não será colocado no texto
+[!] - Considerar colocar no Texto
+[?] - Considerar Implentar depois
+
+            [X] As variaveis do json "environmental_varuabkes" servem para descobrir mais facilmente onde poderá alocar um arquivo/dados/folders nos blocos logicos. além de fornecer a quantidade de blocos disponiveis. Serve simplesmente para ajudar o nosso simulador e não faz parte do programa simulado. Tudo isso é justificado para facilitar na hora da programação em Json e Python no simulador.
+
+            [!] Current_folder_indice sera mudado ao dar um comando cd
+
+            [!] no "folders" existe um problema: se acaso amount_file_available estiver em 0 ainda assim poderá ser criados novas pastas pois a estrutura dos folders ja esta definida no primeiro bloco logico, mas nesses novos folders não haverá como atribuir arquivos, pois todos os blocos logicos já estão ocupados.
+
+
+            [!] Aprendemos o conceito de padding no base64.
+
+            [!] O disco .json sempre se manterá com o seu tamanho, pois todas as estruturas internas já estão criadas e preenchidas com valores Coringas.
+
+            [!] A nossa estrutura de folder é implementada como se fosse uma lista. e Não uma estrutura aninhada de fato, mas simula uma.
+            [!][?] Não existe caminho relativo e nem caminho absoluto, para executar as ações o usuario deverá estar na pasta atual.
+            [!][?] Não existe exclusão recursiva: Tem que apagar os arquivos/pastas dentro do folder antes de exclui-lo.
+
+            [!][?] Não existe criação recursiva.
+
+            [!] Não movemos diretorios inteiros, Apenas arquivos
+
+            [!] Não recuperamos diretorios inteiros, apenas Files
+
