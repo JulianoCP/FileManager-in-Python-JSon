@@ -8,7 +8,7 @@ class cCOMMAND_MANAGER:
         self.save_olf_folder_indice = 0
 
         self.cDISK = cDISK_MANAGER()
-        print("Shell Started.")
+        print("Shell iniciado.")
 
     #Pega o comando e verifica se é para o Sistema real ou o virtual
     def command_line(self, cmd):
@@ -39,8 +39,6 @@ class cCOMMAND_MANAGER:
             tmp_parametros = parametros[0].split("/")
 
             if self.verify_caracter_empty(tmp_parametros) > 0:
-                if len(tmp_parametros) > 2:
-                    self.cDISK.change_current_folder(".")
                 for folder_interator in tmp_parametros:
                     if folder_interator != "":
                         self.cDISK.change_current_folder(folder_interator)
@@ -55,10 +53,6 @@ class cCOMMAND_MANAGER:
             tmp_parametros = parametros[0].split("/")
 
             if self.verify_caracter_empty(tmp_parametros) > 0:
-                if len(tmp_parametros) > 2:
-                    self.cDISK.change_current_folder(".")
-
-
                 for folder_interator in tmp_parametros[:-1]:
                     if folder_interator != "":
                         self.cDISK.change_current_folder(folder_interator)
@@ -81,9 +75,6 @@ class cCOMMAND_MANAGER:
                 tmp_parametros = None
 
             if tmp_parametros == None:
-                if len(file_parameter) > 2:
-                    self.cDISK.change_current_folder(".")
-                
                 for folder_interator in file_parameter[:-1]:
                     if folder_interator != "":
                         self.cDISK.change_current_folder(folder_interator)
@@ -92,15 +83,11 @@ class cCOMMAND_MANAGER:
                 self.recover_old_folder()
                 return
             else:
-                if len(tmp_parametros) > 2:
-                    self.cDISK.change_current_folder(".")
-                
                 for folder_interator in tmp_parametros:
                     if folder_interator != "":
                         self.cDISK.change_current_folder(folder_interator)
 
                 self.cDISK.add_file_on_disk(file_parameter[-1])
-
                 self.recover_old_folder()
                 return
 
@@ -120,7 +107,6 @@ class cCOMMAND_MANAGER:
 
             if tmp_parametros == None:
                 if len(file_parameter) > 2:
-                    self.cDISK.change_current_folder(".")
                     is_recursive = True
                 
                 for folder_interator in file_parameter[:-1]:
@@ -139,7 +125,6 @@ class cCOMMAND_MANAGER:
                 return
             else:
                 if len(tmp_parametros) > 2:
-                    self.cDISK.change_current_folder(".")
                     is_recursive = True
                 
                 for folder_interator in tmp_parametros:
@@ -173,9 +158,6 @@ class cCOMMAND_MANAGER:
             tmp_parametros = parametros[0].split("/")
 
             if self.verify_caracter_empty(tmp_parametros) > 0:
-                if len(tmp_parametros) > 2:
-                    self.cDISK.change_current_folder(".")
-
                 for folder_interator in tmp_parametros:
                     if folder_interator != "":
                         self.cDISK.change_current_folder(folder_interator)
@@ -190,9 +172,6 @@ class cCOMMAND_MANAGER:
             tmp_parametros = parametros[0].split("/")
 
             if self.verify_caracter_empty(tmp_parametros) > 0:
-                if len(tmp_parametros) > 2:
-                    self.cDISK.change_current_folder(".")
-
                 for folder_interator in tmp_parametros[:-1]:
                     if folder_interator != "":
                         self.cDISK.change_current_folder(folder_interator)
@@ -207,9 +186,6 @@ class cCOMMAND_MANAGER:
             tmp_parametros = parametros[0].split("/")
 
             if self.verify_caracter_empty(tmp_parametros) > 0:
-                if len(tmp_parametros) > 2:
-                    self.cDISK.change_current_folder(".")
-
                 for folder_interator in tmp_parametros[:-1]:
                     if folder_interator != "":
                         self.cDISK.change_current_folder(folder_interator)
@@ -231,14 +207,19 @@ class cCOMMAND_MANAGER:
         #Trata o commando SAVE.
         if ("save" == command):
             self.cDISK.persist_data()
+            return
         
         #Trata o commando SAVE.
         if ("format" == command):
             self.cDISK.erase_disk()
-            print("Virtual disk deleted.")
-            print("Recreating structure.")
+            print("Disco virtual apagado")
+            print("Recriando todas estruturas.")
             self.cDISK = cDISK_MANAGER()
-            print("All ready, shell started again.")
+            print("Tudo pronto, pode utilizar o shell novamente.")
+            return
+
+        print("Comando não encontrado.")
+        return
 
     #Executa para o Sistema de arquivo Real
     def real_command_line(self, cmd):

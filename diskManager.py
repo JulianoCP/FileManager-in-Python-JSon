@@ -50,11 +50,11 @@ class cDISK_MANAGER:
             self.default_block_used_files.append(self.create_default_name_using_size(MAX_ADDRESSES_IN_BLOCK))
 
         try:
-            print("Looking for the disk.")
+            print("Procurando o disco.")
             self.file_pointer = open(self.file_name)
             self.disk_data = json.load(self.file_pointer)
         except:
-            print("Disc not found.")
+            print("Disco nao encontrado.")
             struct_to_disk = {
                 "blocks": [],
                 "files" : [],
@@ -142,119 +142,152 @@ class cDISK_MANAGER:
                 start = 0
                 chunk = SIZE_BYTES_BLOCK
                 for interator in range(amount_block):
-                    struct_to_disk["blocks"][interator] = self.verify_size_string(mnt_data[start : start + chunk], SIZE_BYTES_BLOCK)
+                    verify = self.verify_size_string(mnt_data[start : start + chunk], SIZE_BYTES_BLOCK)
+                    if verify == None: return
+                    struct_to_disk["blocks"][interator] = verify
                     struct_to_disk["environmental_variables"]["block_list_available"][interator] = 0
                     struct_to_disk["environmental_variables"]["amount_block_available"] -= 1
                     start += chunk
             else:
-                struct_to_disk["blocks"][0] = self.verify_size_string(mnt_data, SIZE_BYTES_BLOCK)
+                verify = self.verify_size_string(mnt_data, SIZE_BYTES_BLOCK)
+                if verify == None: return
+                struct_to_disk["blocks"][0] = verify
                 struct_to_disk["environmental_variables"]["block_list_available"][0] = 0
                 struct_to_disk["environmental_variables"]["amount_block_available"] -= 1
 
             with open(DISK_NAME, "w") as file_write:
                 json.dump(struct_to_disk, file_write)
 
-            print("Disc created successfully.")
+            print("Disco criado com sucesso.")
             self.file_pointer = open(self.file_name)
             self.disk_data = json.load(self.file_pointer)
         finally:
-            print("Disk opened successfully.")
+            print("Tudo pronto.")
 
     #Cria mockup de files.
     def create_default_file(self):
-        mock_file = {
-                        "file_name" : self.create_default_name_using_size(MAX_SIZE_FILE_NAME),
-                        "extension_file" : self.create_default_name_using_size(MAX_SIZE_EXTENSION_FILE),
-                        "bytes_used" : self.create_default_name_using_size(MAX_SIZE_METADATA_FILE),
-                        "block_used" : self.default_block_used_files
-                    }
-        return mock_file
+        try:
+            mock_file = {
+                            "file_name" : self.create_default_name_using_size(MAX_SIZE_FILE_NAME),
+                            "extension_file" : self.create_default_name_using_size(MAX_SIZE_EXTENSION_FILE),
+                            "bytes_used" : self.create_default_name_using_size(MAX_SIZE_METADATA_FILE),
+                            "block_used" : self.default_block_used_files
+                        }
+            return mock_file
+        except:
+            print("Falha na criacao dos mokcup para os 'ARQUIVOS'.")
 
     #Cria uma string de caracter defaulm usando como base um tamanho passado por parametro.
     def create_default_name_using_size(self, size):
-        new_name = ""
-        for interator in range(size):
-            new_name += DEFAULT_CARACTER
-        return new_name
+        try:
+            new_name = ""
+            for interator in range(size):
+                new_name += DEFAULT_CARACTER
+            return new_name
+        except:
+            print("Falha na criacao dos nomes padroes.")
 
     #Função para mostrar ao usuario o erro caso ocorra um excecao por 'None'
     def show_message_if_none(self, msg, result):
-        if result == None:
-            print(msg)
-            exit()
+        try:
+            if result == None:
+                print(msg)
+                return None
+            return True
+        except:
+            print("Falha na exibicao da mensagem de erro.")
 
     #Função para montar os blockos usados.
     def set_block_used(self, blocks_list):
-        block_result = []
-        for interator in range(AMOUNT_BLOCK_AVAILABLE_TO_FILE):
-            if interator < len(blocks_list):
-                block_result.append(str(blocks_list[interator]))
-            else:
-                block_result.append(self.create_default_name_using_size(MAX_ADDRESSES_IN_BLOCK))
-        return block_result
+        try:
+            block_result = []
+            for interator in range(AMOUNT_BLOCK_AVAILABLE_TO_FILE):
+                if interator < len(blocks_list):
+                    block_result.append(str(blocks_list[interator]))
+                else:
+                    block_result.append(self.create_default_name_using_size(MAX_ADDRESSES_IN_BLOCK))
+            return block_result
+        except:
+            print("Falha ao setar os blocos utilizados.")
 
     #Verifica o tamanho do arquivo, caso seja aceita ele é completado com valor default.
     def verify_size_string(self, name, expected_size):
-        if len(name) <= expected_size:
-            new_name = name
-            for interator in range(expected_size - len(name)):
-                new_name += DEFAULT_CARACTER
-            return new_name
-        else:
-            return None
+        try:
+            if len(name) <= expected_size:
+                new_name = name
+                for interator in range(expected_size - len(name)):
+                    new_name += DEFAULT_CARACTER
+                return new_name
+            else:
+                print("Tamanho do nome foi extrapolado.")
+                return None
+        except:
+            print("Falha na verificacao do tamanho da 'STRING'.")
 
     #Retorna o nome/bloco sem os "="
     def return_correct_context(self, content):
-        return content.split(DEFAULT_CARACTER)[0]
+        try:
+            return content.split(DEFAULT_CARACTER)[0]
+        except:
+            print("Falha ao retornar o contexto correto.")
 
     #Verifica se tem espaco suficiente nos blocos.
     def verify_has_block_available(self, size_file):
-        if size_file <= self.disk_data["environmental_variables"]["amount_block_available"]:
-            return True
-        return None
+        try:
+            if size_file <= self.disk_data["environmental_variables"]["amount_block_available"]:
+                return True
+            return None
+        except:
+            print("Falha ao verificar a existencia de blocos disponiveis.")
 
     #Metodo que persiste os dados no disko.
     def persist_data(self):
         try:
             with open(DISK_NAME, "w") as file_write:
                 json.dump(self.disk_data, file_write)
-            print("persisted data.")
+            print("Dados foram salvos.")
         except:
-            print("Failed to persist data.")
+            print("Falha ao salvar os dados.")
 
     #Função que faz a releitura das estruturas padroes do json e rescreve os blocos logicos.
     def scan_struct(self):
+        try:
+            self.register_files = ""
+            self.register_folder = ""
+            self.register_env = ""
+            
+            for mock_file in self.disk_data["files"]:
+                for key in mock_file:
+                    self.register_files += str(key) + str(mock_file[key])
+            
+            for mock_env in self.disk_data["environmental_variables"]:
+                self.register_env += str(mock_env) + str(self.disk_data["environmental_variables"][mock_env])
+            
+            for mock_folder in self.disk_data["folders"]:
+                self.register_folder += str(mock_folder)
+            self.register_folder += "]"
 
-        self.register_files = ""
-        self.register_folder = ""
-        self.register_env = ""
-        
-        for mock_file in self.disk_data["files"]:
-            for key in mock_file:
-                self.register_files += str(key) + str(mock_file[key])
-        
-        for mock_env in self.disk_data["environmental_variables"]:
-            self.register_env += str(mock_env) + str(self.disk_data["environmental_variables"][mock_env])
-        
-        for mock_folder in self.disk_data["folders"]:
-            self.register_folder += str(mock_folder)
-        self.register_folder += "]"
+            mnt_data = ""
+            mnt_data += "files" + self.register_files
+            mnt_data += "folders[" + self.register_folder
+            mnt_data += "environmental_variables" + self.register_env
 
-        mnt_data = ""
-        mnt_data += "files" + self.register_files
-        mnt_data += "folders[" + self.register_folder
-        mnt_data += "environmental_variables" + self.register_env
+            amount_block = math.ceil(len(mnt_data) / SIZE_BYTES_BLOCK)
 
-        amount_block = math.ceil(len(mnt_data) / SIZE_BYTES_BLOCK)
-
-        if amount_block > 1:
-            start = 0
-            chunk = SIZE_BYTES_BLOCK
-            for interator in range(amount_block):
-                self.disk_data["blocks"][interator] = self.verify_size_string(mnt_data[start : start + chunk], SIZE_BYTES_BLOCK)
-                start += chunk
-        else:
-            self.disk_data["blocks"][0] = self.verify_size_string(mnt_data, SIZE_BYTES_BLOCK)
+            if amount_block > 1:
+                start = 0
+                chunk = SIZE_BYTES_BLOCK
+                for interator in range(amount_block):
+                    verify = self.verify_size_string(mnt_data[start : start + chunk], SIZE_BYTES_BLOCK)
+                    if verify == None: return
+                    self.disk_data["blocks"][interator] = verify
+                    start += chunk
+            else:
+                verify = self.verify_size_string(mnt_data, SIZE_BYTES_BLOCK)
+                if verify == None: return
+                self.disk_data["blocks"][0] = verify
+        except:
+            print("Falha ao escanear a estrutura.")
 
     #Metodo para ser chamada antes de fechar o programa
     def save_disk(self):
@@ -262,32 +295,31 @@ class cDISK_MANAGER:
             self.scan_struct()
             self.file_pointer.close()
             self.persist_data()
-            print( "saved " + DISK_NAME)
+            print( "Salvando o " + DISK_NAME + ".")
         except:
-            print("Failed, disk impossible to save.")
+            print("Nao foi possivel salvar o disco.")
 
     #Metodo para deletar o disco dsk
     def erase_disk(self):
         try:
             os.remove(DISK_NAME)
-            print(DISK_NAME + " erased.")
+            print(DISK_NAME + " foi apagado.")
         except:
-            print("Failed, disk not found.")
+            print("Disco nao foi encontrado.")
     
     #Metodo para deletar o arquivo que foi mandado para nosso dsk
     def erase_file_upload_to_disk(self, file_name):
         try:
             os.remove(file_name)
-            print(file_name + " deleted.")
         except:
-            print("Failed, file not found.")
+            print("Arquivo nao foi encontrado.")
 
     #Metodo que mostra a estrutura do disko.
     def view_disk_data(self):
         try:
             print(json.dumps(self.disk_data, indent = 4))
         except:
-            print("Failed, to dumps json.")
+            print("Falha ao visualizar o disco.")
 
     #Metodo que adiciona novo bloco utilizazdo no disko/atualizar algum já existente.
     def add_block_on_disk(self, indice_block, chunk):
@@ -296,9 +328,11 @@ class cDISK_MANAGER:
             if len(data) >= SIZE_BYTES_BLOCK:
                 self.disk_data["blocks"][indice_block] = data
             else:
-                self.disk_data["blocks"][indice_block] = self.verify_size_string(data, SIZE_BYTES_BLOCK)
+                verify = self.verify_size_string(data, SIZE_BYTES_BLOCK)
+                if verify == None: return
+                self.disk_data["blocks"][indice_block] = verify
         except:
-            print("Failed, unable to add block to disk.")
+            print("Nao foi possivel adicionar os blocos no disco.")
     
     #Metodo que remove os dados contidos no block_list[indice_block]
     def remove_block_on_disk(self, indice_block):
@@ -306,28 +340,34 @@ class cDISK_MANAGER:
             self.disk_data["blocks"][indice_block] = self.default_value_block
             self.disk_data["environmental_variables"]["block_list_available"][indice_block] = 1
         except:
-            print("Failed to erase block on disk.")
+            print("Falha ao remover os blocos do disco.")
 
     #Mostra o caminho do diretorio atual.
     def show_path(self):
-        print(self.return_correct_context(self.current_folder))
+        try:
+            print(self.return_correct_context(self.current_folder))
+        except:
+            print("Falha ao mostrar o path.")
     
     #Nossa função de ls, ou seja mostra nossos arquivos/diretorios dentro do diretorio atual.
     def show_data_in_folder(self):
-        data_env = self.disk_data["environmental_variables"]["folder_list_available"][self.current_folder_indice][1]
-        for indice in range(len(data_env)):
-            if data_env[indice] == 0:
-                folder = self.disk_data["folders"][self.current_folder_indice][1][indice]
-                if folder[1] == "F":
-                    extract = self.return_correct_context(folder[0])
-                    extract = extract.split("/")
-                    print(extract[-1] + " ", end = '')
-                elif folder[1] == "A":
-                    extract_data = self.disk_data["files"][int(folder[2])]
-                    extract_name = self.return_correct_context(extract_data["file_name"])
-                    extract_name += "." + self.return_correct_context(extract_data["extension_file"])
-                    print(extract_name + " ", end = '')
-        print("")
+        try:
+            data_env = self.disk_data["environmental_variables"]["folder_list_available"][self.current_folder_indice][1]
+            for indice in range(len(data_env)):
+                if data_env[indice] == 0:
+                    folder = self.disk_data["folders"][self.current_folder_indice][1][indice]
+                    if folder[1] == "F":
+                        extract = self.return_correct_context(folder[0])
+                        extract = extract.split("/")
+                        print(extract[-1] + " ", end = '')
+                    elif folder[1] == "A":
+                        extract_data = self.disk_data["files"][int(folder[2])]
+                        extract_name = self.return_correct_context(extract_data["file_name"])
+                        extract_name += "." + self.return_correct_context(extract_data["extension_file"])
+                        print(extract_name + " ", end = '')
+            print("")
+        except:
+            print("Falha na listagem dos arquivos/diretorios.")
 
     #Metodo que deleta o arquivo do disco.
     def remove_file_on_disk(self, file_name):
@@ -343,8 +383,9 @@ class cDISK_MANAGER:
                 if extract != "":
                     self.disk_data["environmental_variables"]["block_list_available"][int(extract)] = 1
                     self.disk_data["environmental_variables"]["amount_block_available"] += 1
+            self.save_disk()
         except:
-            print("Failed to remove file.")
+            print("Falha ao remover o arquivo.")
 
     #Descobre onde esta o ponteiro do arquivo, e seu retorno envolve:
         # - [0] = O ponteiro do ARQUIVO, para a estrutura dos files.
@@ -352,20 +393,25 @@ class cDISK_MANAGER:
             # - [0] = Indice de qual folder estamos, na estrutura dos folders.
             # - [1] = Indice de qual subfolder estamos, na esturura interna do folder. 
     def discover_file_on_folder(self, file_name):
-        discover = file_name.split(".")
-        new_name_file = self.verify_size_string(discover[0], MAX_SIZE_FILE_NAME)
+        try:
+            discover = file_name.split(".")
+            verify = self.verify_size_string(discover[0], MAX_SIZE_FILE_NAME)
+            if verify == None: return
+            new_name_file = verify
 
-        extract = self.disk_data["folders"][self.current_folder_indice][1]
-        current_inside_index = None
-        data = None
-        for interator in range(len(extract)):
-            if extract[interator][0] == new_name_file:
-                data = extract[interator]
-                current_inside_index = interator
-                break
-        
-        self.show_message_if_none("File don't exist in this folder", data)
-        return(int(data[2]),[self.current_folder_indice, current_inside_index])
+            extract = self.disk_data["folders"][self.current_folder_indice][1]
+            current_inside_index = None
+            data = None
+            for interator in range(len(extract)):
+                if extract[interator][0] == new_name_file:
+                    data = extract[interator]
+                    current_inside_index = interator
+                    break
+            
+            if self.show_message_if_none("Arquivo não existe no diretorio.", data) == None: return
+            return(int(data[2]),[self.current_folder_indice, current_inside_index])
+        except:
+            print("Falha ao descobrir o arquivo dentro do diretorio.")
                 
     #Metodo que reconstroi o arquivo apatir dos bytes salvos nos blocos.
     def recover_file_on_disk(self, file_name):
@@ -392,13 +438,13 @@ class cDISK_MANAGER:
             file.write(decode_b64)
             file.close()
         except:
-            print("File recovery failed.")
+            print("Falha ao recuperar o arquivo do disco.")
 
     #Metodo que muda para o diretorio selecionado se existir.
     def change_current_folder(self, folder_name):
         try:
             if folder_name == self.return_correct_context(self.current_folder):
-                print("You are already at the root.")
+                print("Voce ja esta no diretorio raiz.")
                 return
             elif folder_name == "..":
                 new_folder = ""
@@ -415,7 +461,10 @@ class cDISK_MANAGER:
                     else:
                         new_folder += extract[interator]
 
-                new_folder = self.verify_size_string(new_folder, MAX_SIZE_FOLDER_NAME)
+                verify = self.verify_size_string(new_folder, MAX_SIZE_FOLDER_NAME)
+                if verify == None: return
+
+                new_folder = verify
                 indice = None
 
                 for interator in range(len(self.disk_data["folders"])):
@@ -439,58 +488,71 @@ class cDISK_MANAGER:
                     else:
                         discover = self.return_correct_context(self.current_folder) + folder_name
 
-                    if self.disk_data["folders"][interator][0] == self.verify_size_string(discover, MAX_SIZE_FOLDER_NAME):
+                    verify = self.verify_size_string(discover, MAX_SIZE_FOLDER_NAME)
+                    if verify == None: return
+
+                    if self.disk_data["folders"][interator][0] == verify:
                         self.current_folder = self.disk_data["folders"][interator][0]
                         self.current_folder_indice = interator
                         return
 
-                print("Diretorio não existente!")
+                print("Diretorio nao encontrado.")
                 return None
         except:
-            print("Failure, invalid directory.")
+            print("Diretorio invalido.")
 
      #Descobre onde esta o ponteiro do folder, e retorna ele.
     def discover_folder_on_folder(self, folder_name):
-        if self.current_folder_indice != 0:
-            discover = self.return_correct_context(self.current_folder) + DEFAULT_CARACTER_FOLDER_ROOT + folder_name
-        else:
-            discover = self.return_correct_context(self.current_folder) + folder_name
-        correct_name = self.verify_size_string(discover, MAX_SIZE_FOLDER_NAME)
+        try:
+            if self.current_folder_indice != 0:
+                discover = self.return_correct_context(self.current_folder) + DEFAULT_CARACTER_FOLDER_ROOT + folder_name
+            else:
+                discover = self.return_correct_context(self.current_folder) + folder_name
+            
+            verify = self.verify_size_string(discover, MAX_SIZE_FOLDER_NAME)
+            if verify == None: return
+            correct_name = verify
 
-        for folder in self.disk_data["folders"][self.current_folder_indice][1]:
-            if folder[0] == correct_name:
-                return int(self.return_correct_context(folder[2])), correct_name
-        return None
+            for folder in self.disk_data["folders"][self.current_folder_indice][1]:
+                if folder[0] == correct_name:
+                    return int(self.return_correct_context(folder[2])), correct_name
+            return None
+        except:
+            print("Falha ao descobrir o ponteiro do diretorio.")
 
     #Metodo para remover um folder.
     def remove_folder_on_disk(self, name_folder):
-        indice, correct_name = self.discover_folder_on_folder(name_folder)
-        self.show_message_if_none("File not exist.", indice)
+        try:
+            indice, correct_name = self.discover_folder_on_folder(name_folder)
+            if self.show_message_if_none("Diretorio nao existe.", indice) == None: return
 
-        for interator in self.disk_data["environmental_variables"]["folder_list_available"][indice][1]:
-            if interator == 0:
-                self.show_message_if_none("Impossible remove folder, has files/folders inside.", None)
-                break
+            for interator in self.disk_data["environmental_variables"]["folder_list_available"][indice][1]:
+                if interator == 0:
+                    if self.show_message_if_none("Impossivel apagar diretorios que nao estejam vazios.", None) == None: return
+                    break
 
-        extract = self.disk_data["folders"][self.current_folder_indice][1]
-        save_indice_removed = None
+            extract = self.disk_data["folders"][self.current_folder_indice][1]
+            save_indice_removed = None
 
-        for interator in range(len(extract)):
-            if extract[interator][0] == correct_name:
-                save_indice_removed = interator
-            
-        self.show_message_if_none("Faliure, indice not  found.", save_indice_removed)
+            for interator in range(len(extract)):
+                if extract[interator][0] == correct_name:
+                    save_indice_removed = interator
+                
+            if self.show_message_if_none("Indice do diretorio inexistente.", save_indice_removed) == None: return
 
-        #Modifica as variaveis de ambiente.
-        self.disk_data["environmental_variables"]["folder_list_available"][self.current_folder_indice][1][save_indice_removed] = 1
-        self.disk_data["environmental_variables"]["folder_list_available"][indice][0] = 1
-        self.disk_data["environmental_variables"]["amount_folder_available"] += 1
+            #Modifica as variaveis de ambiente.
+            self.disk_data["environmental_variables"]["folder_list_available"][self.current_folder_indice][1][save_indice_removed] = 1
+            self.disk_data["environmental_variables"]["folder_list_available"][indice][0] = 1
+            self.disk_data["environmental_variables"]["amount_folder_available"] += 1
+            self.save_disk()
+        except:
+            print("Falha ao remover o diretorio.")
 
     #Metodo que adiciona novo diretorio no disko/atualizar algum já existente.
     def add_folder_on_disk(self, name_folder):
         try:
             if self.disk_data["environmental_variables"]["amount_folder_available"] <= 0:
-                print("Don't have space to create more folders.")
+                print("Nao ha mais espaco para adicionar diretorios.")
                 return
             
             slot_inside_folder_available = None
@@ -516,8 +578,9 @@ class cDISK_MANAGER:
                 else:
                     new_name_folder = self.return_correct_context(self.current_folder) + name_folder
 
-                new_name_folder = self.verify_size_string(new_name_folder, MAX_SIZE_FOLDER_NAME)
-                self.show_message_if_none("Name folder, extrapoled", new_name_folder)
+                verify = self.verify_size_string(new_name_folder, MAX_SIZE_FOLDER_NAME)
+                if verify == None: return
+                new_name_folder = verify
 
                 #Colocando as informações dentro do bloco do atual folder.
                 self.disk_data["folders"][self.current_folder_indice][1][slot_inside_folder_available][0] = new_name_folder
@@ -533,11 +596,11 @@ class cDISK_MANAGER:
                 self.disk_data["environmental_variables"]["amount_folder_available"] -= 1
 
             else:
-                print("Don't have space to create more folders inside/global.")
+                print("Não ha espaco para adicionar mais diretorios.")
                 return
 
         except:
-            print("Failed, unable to add folder on disk.")
+            print("Falha impossivel adicionar o diretorio.")
 
     #Metodo que adiciona novo arquivo no disko/atualizar algum já existente.
     def add_file_on_disk(self, file_name):
@@ -550,10 +613,10 @@ class cDISK_MANAGER:
             extract_soft_info_file[1] = self.verify_size_string(extract_hard_info_file[1], MAX_SIZE_EXTENSION_FILE)
 
             #Verifica se os metadados não sao extrapolados e se existe espaco no inode(files)
-            self.show_message_if_none("File name, extrapolated size.", extract_soft_info_file[0])
-            self.show_message_if_none("File extension extrapolated size.", extract_soft_info_file[1])
+            if self.show_message_if_none("Tamanho do nome foi extrapolado.", extract_soft_info_file[0]) == None: return
+            if self.show_message_if_none("Tamanho da extensao foi extrapolada.", extract_soft_info_file[1]) == None: return
             if self.disk_data["environmental_variables"]["amount_file_available"] <= 0:
-                print("Don't have more space in file.")
+                print("Nao e possivel adicionar mais arquivos.")
                 return
 
             #Verifica se existe espaco interno no current folder.
@@ -563,7 +626,7 @@ class cDISK_MANAGER:
                 if dest_folder[1][interator]:
                     amount_slot_available += 1
             if amount_slot_available <= 0:
-                print("Don't have more space in current folder.")
+                print("Nao ha mais espaco neste folder para adicionar arquivos.")
                 return
 
             with open(file_name, "rb") as file:
@@ -574,7 +637,7 @@ class cDISK_MANAGER:
             size_64_encode = len(b64)
             amount_block = math.ceil(size_64_encode / SIZE_BYTES_BLOCK)
             has_available_slot = self.verify_has_block_available(amount_block)
-            self.show_message_if_none("Don't have space to insert file.", has_available_slot)
+            if self.show_message_if_none("Nao ha espaco para adicionar o arquivo.", has_available_slot) == None: return
 
             if size_64_encode - SIZE_BYTES_BLOCK >= 0:
                 chunk = SIZE_BYTES_BLOCK
@@ -625,4 +688,4 @@ class cDISK_MANAGER:
             self.persist_data()
 
         except:
-            print("Failed to add file to disk.")
+            print("Falha ao adicionar o arquivo.")
