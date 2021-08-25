@@ -5,7 +5,7 @@ class cCOMMAND_MANAGER:
     #Constructor.
     def __init__(self):
         self.save_old_folder_name = ""
-        self.save_olf_folder_indice = 0
+        self.save_old_indice_folder = 0
 
         self.cDISK = cDISK_MANAGER()
         print("Shell iniciado.")
