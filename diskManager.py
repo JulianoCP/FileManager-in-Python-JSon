@@ -6,23 +6,23 @@ SIZE_DISK = 1024 #Tamanho total do disko em KB/s.
 SIZE_BLOCK = 4 #Tamanho dos blocos em KB/s.
 SIZE_BYTES_BLOCK = 4096 #Quantidade de byte em cada bloco.
 SIZE_TYPE_FOLDER = 1 #Tamanho maximo no campo TYPE do FOLDER.
-SIZE_POINTER_FOLDER = 5 #Tamanho maximo do campo POINTER do FOLDER.
+SIZE_POINTER_FOLDER = 8 #Tamanho maximo do campo POINTER do FOLDER.
 
 DEFAULT_CARACTER = "=" #Caracter defaul para preencher os campos do json.
 DEFAULT_CARACTER_FOLDER_ROOT = "/" #Caracter defaul para preencher o primeiro folder.
 DEFAULT_CARACTER_FILE = "A" #Caracter defaul para preencher se o bloco é um file na estrutura do folder.
 DEFAULT_CARACTER_FOLDER = "F" #Caracter defaul para preencher se o bloco é um folder na estrutura do folder.
 
-MAX_SIZE_FILE_NAME = 36 #Nome maximo suportado para um file.
-MAX_SIZE_FOLDER_NAME = 36 #Nome maximo suportado para um folder.
+MAX_SIZE_FILE_NAME = 64 #Nome maximo suportado para um file.
+MAX_SIZE_FOLDER_NAME = 64 #Nome maximo suportado para um folder.
 MAX_SIZE_EXTENSION_FILE = 3 #Nome maximo de extensao
-MAX_SIZE_METADATA_FILE = 20 #Nome maximo para os metadados de um file.
-MAX_ADDRESSES_IN_BLOCK = 5 #Quantidade maximo de blocos que podem ser enderecados, lembrando que 5 == "00000" ou seja até 99999 blocos
+MAX_SIZE_METADATA_FILE = 32 #Nome maximo para os metadados de um file.
+MAX_ADDRESSES_IN_BLOCK = 8 #Quantidade maximo de blocos que podem ser enderecados, lembrando que 5 == "00000" ou seja até 99999 blocos
 
-AMOUNT_FILE = 234 #Quantidade maxima de files no disco.
+AMOUNT_FILE = 256 #Quantidade maxima de files no disco.
 AMOUNT_FOLDER = 16 #Quantidade maxima de folders no disco.
-AMOUNT_DATA_IN_FOLDER = 8 #Quantidade de itens em um folder.
-AMOUNT_BLOCK_AVAILABLE_TO_FILE = 20 #Quantidade maximo de blocks de enderecamento que pode ser usadas por um file.
+AMOUNT_DATA_IN_FOLDER = 16 #Quantidade de itens em um folder.
+AMOUNT_BLOCK_AVAILABLE_TO_FILE = 32 #Quantidade maximo de blocks de enderecamento que pode ser usadas por um file.
 
 #Class responsavel por manipular as informações do disko que vao ser salva no .dsk
 class cDISK_MANAGER:
